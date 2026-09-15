@@ -63,6 +63,16 @@ const handleSubmit = async (e) => {
     setLoading(false);
   }
 };
+ const handleSocialSignIn = async (provider) => {
+    const toastId = toast.loading(`Connecting to ${provider}...`);
+    try {
+      await authClient?.signIn?.social({ provider });
+      toast.dismiss(toastId);
+    } catch (err) {
+      toast.error(`Failed to connect with ${provider}`, { id: toastId });
+      console.error(err);
+    }
+  };
 
   return (
     <div className="relative w-full max-w-md mx-auto">
@@ -129,19 +139,20 @@ const handleSubmit = async (e) => {
               >
                 <button
                   type="button"
+                  onClick={handleSocialSignIn("google")}
                   className="w-full py-3.5 px-4 bg-slate-900/90 hover:bg-slate-800/80 border border-slate-800 hover:border-slate-700 text-white font-medium text-sm rounded-2xl flex items-center justify-center gap-3 transition-all group"
                 >
                   <FaGoogle className="w-5 h-5 text-red-400 group-hover:scale-110 transition-transform" />
                   <span>Sign in with Google</span>
                 </button>
 
-                <button
+                {/* <button
                   type="button"
                   className="w-full py-3.5 px-4 bg-slate-900/90 hover:bg-slate-800/80 border border-slate-800 hover:border-slate-700 text-white font-medium text-sm rounded-2xl flex items-center justify-center gap-3 transition-all group"
                 >
                   <FaGithub className="w-5 h-5 text-purple-400 group-hover:scale-110 transition-transform" />
                   <span>Continue with GitHub</span>
-                </button>
+                </button> */}
               </motion.div>
             ) : (
               <motion.form
