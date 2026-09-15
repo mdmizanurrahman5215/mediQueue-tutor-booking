@@ -3,30 +3,33 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import ActiveLink from '../common/ActiveLink';
+import { authClient } from '@/app/lib/auth-client'; 
+import toast from 'react-hot-toast';
+import { useRouter } from 'next/navigation';
 
 import { 
   Sun, 
   Moon, 
   Menu, 
   X, 
-  User, 
   LogOut, 
-  BookOpen, 
-  PlusCircle, 
-  Calendar 
+  Loader2 
 } from 'lucide-react';
 
 export default function Navbar() {
-  // Demo State (Replace this with your Auth Context / Firebase Auth State)
-  const [user, setUser] = useState({
-    displayName: 'Arosh Chowdhury',
-    email: 'arosh@gmail.com',
-    photoURL: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-  });
-
+  const router = useRouter();
   const [darkMode, setDarkMode] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+
+  // Better Auth session hook
+  const { 
+    data: session, 
+    isPending, 
+  } = authClient.useSession(); 
+
+  // Better Auth-এর user object
+  const user = session?.user;
 
   // Toggle Theme Logic
   useEffect(() => {
@@ -37,11 +40,34 @@ export default function Navbar() {
     }
   }, [darkMode]);
 
-  const handleLogout = () => {
-    setUser(null);
-    setIsProfileOpen(false);
-    // Add your JWT/Auth logout logic here
-  };
+
+
+const handleLogout = async () => {
+  const toastId = toast.loading('Logging out...');
+
+  try {
+    await authClient.signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          toast.success('Logged out successfully!', { id: toastId });
+          setIsProfileOpen(false);
+          setIsMenuOpen(false);
+          
+          // Toast ta jate user dekhter pay tar jonno choto ekta delay
+        setTimeout(() => {
+              router.push('/login'); // Next.js Client Navigation
+            }, 800);
+        },
+        onError: (ctx) => {
+          toast.error(ctx?.error?.message || 'Failed to logout!', { id: toastId });
+        },
+      },
+    });
+  } catch (err) {
+    toast.error('Something went wrong during logout.', { id: toastId });
+    console.error('Logout failed:', err);
+  }
+};
 
   return (
     <nav className="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 transition-colors">
@@ -66,7 +92,7 @@ export default function Navbar() {
             {/* Protected Routes - Only Visible After Login */}
             {user && (
               <>
-                <ActiveLink href="/">Add Tutor</ActiveLink>
+                <ActiveLink href="/add-tutor">Add Tutor</ActiveLink>
                 <ActiveLink href="/my-tutors">My Tutors</ActiveLink>
                 <ActiveLink href="/my-booked-sessions">My Booked Sessions</ActiveLink>
               </>
@@ -84,16 +110,18 @@ export default function Navbar() {
               {darkMode ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5 text-gray-600" />}
             </button>
 
-            {/* Auth Buttons or Profile Dropdown */}
-            {user ? (
+            {/* Loading State or Auth State */}
+            {isPending ? (
+              <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
+            ) : user ? (
               <div className="relative">
                 <button
                   onClick={() => setIsProfileOpen(!isProfileOpen)}
                   className="flex items-center focus:outline-none ring-2 ring-blue-500 rounded-full p-0.5"
                 >
                   <img
-                    src={user.photoURL || 'https://via.placeholder.com/150'}
-                    alt={user.displayName || 'User Profile'}
+                    src={user?.image || 'https://via.placeholder.com/150'}
+                    alt={user?.name || 'User Profile'}
                     className="w-8 h-8 rounded-full object-cover"
                   />
                 </button>
@@ -102,17 +130,17 @@ export default function Navbar() {
                 {isProfileOpen && (
                   <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 py-2 z-50 animate-in fade-in slide-in-from-top-2">
                     <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-700">
-                      <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">
-                        {user.displayName}
+                      <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">
+                        {user?.name}
                       </p>
                       <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                        {user.email}
+                        {user?.email}
                       </p>
                     </div>
 
                     <button
                       onClick={handleLogout}
-                      className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 flex items-center space-x-2 transition-colors mt-1"
+                      className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 flex items-center space-x-2 transition-colors mt-1 cursor-pointer"
                     >
                       <LogOut className="w-4 h-4" />
                       <span>Logout</span>
@@ -171,17 +199,21 @@ export default function Navbar() {
             </>
           )}
 
-          {user ? (
+          {isPending ? (
+            <div className="py-2 flex justify-center">
+              <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
+            </div>
+          ) : user ? (
             <div className="pt-4 border-t border-gray-100 dark:border-gray-800 mt-2">
               <div className="flex items-center space-x-3 mb-3 px-2">
                 <img
-                  src={user.photoURL}
-                  alt={user.displayName}
-                  className="w-9 h-9 rounded-full"
+                  src={user?.image || 'https://via.placeholder.com/150'}
+                  alt={user?.name || 'User'}
+                  className="w-9 h-9 rounded-full object-cover"
                 />
-                <div>
-                  <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{user.displayName}</p>
-                  <p className="text-xs text-gray-500">{user.email}</p>
+                <div className="overflow-hidden">
+                  <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{user?.name}</p>
+                  <p className="text-xs text-gray-500 truncate">{user?.email}</p>
                 </div>
               </div>
               <button
