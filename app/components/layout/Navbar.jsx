@@ -66,7 +66,7 @@ export default function Navbar() {
             {/* Protected Routes - Only Visible After Login */}
             {user && (
               <>
-                <ActiveLink href="/add-tutor">Add Tutor</ActiveLink>
+                <ActiveLink href="/">Add Tutor</ActiveLink>
                 <ActiveLink href="/my-tutors">My Tutors</ActiveLink>
                 <ActiveLink href="/my-booked-sessions">My Booked Sessions</ActiveLink>
               </>
