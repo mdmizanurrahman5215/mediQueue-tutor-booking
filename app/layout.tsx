@@ -23,15 +23,19 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col">
-        <Navbar/>
-        {children}
-         <Toaster position="top-right" />
-        </body>
+    <html lang="en">
+      <body className="bg-slate-950 text-slate-100 antialiased min-h-screen flex flex-col">
+        {/* Navbar */}
+        <Navbar />
+
+        {/* Main Content Area - নির্দিষ্ট Width ধরে রাখবে */}
+        <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {children}
+        </main>
+
+        {/* Footer */}
+        {/* <Footer /> */}
+      </body>
     </html>
   );
 }
