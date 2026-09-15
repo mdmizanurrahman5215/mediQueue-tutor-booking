@@ -6,8 +6,10 @@ import { Mail, Lock, ArrowRight, Sparkles } from 'lucide-react';
 import { FaGithub, FaGoogle } from 'react-icons/fa';
 import { authClient } from '@/app/lib/auth-client';
 import toast from 'react-hot-toast';
+import { useRouter } from 'next/navigation';
 
-export default function LoginForm({ onSwitchToRegister }) {
+export default function LoginForm() {
+    const router = useRouter();
     const [loading, setLoading]=useState(false)
   const [authMethod, setAuthMethod] = useState('social'); // 'social' | 'email'
   const [formData, setFormData] = useState({
@@ -19,7 +21,9 @@ export default function LoginForm({ onSwitchToRegister }) {
     const { name, value } = e?.target || {};
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
-
+const onSwitchToRegister = () => {
+    router.push('/register');
+  };
 
 
 const handleSubmit = async (e) => {

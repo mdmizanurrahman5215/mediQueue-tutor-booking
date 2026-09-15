@@ -6,8 +6,10 @@ import { User, Mail, Lock, ArrowRight, Sparkles, Camera, CheckCircle2, AlertCirc
 import { FaGithub, FaGoogle } from 'react-icons/fa';
 import toast, { Toaster } from 'react-hot-toast';
 import { authClient } from '@/app/lib/auth-client';
+import { useRouter } from 'next/navigation';
 
-export default function RegisterForm({ onSwitchToLogin }) {
+export default function RegisterForm() {
+    const router = useRouter();
   const [authMethod, setAuthMethod] = useState('social');
   const [imagePreview, setImagePreview] = useState(null);
   const [passwordError, setPasswordError] = useState('');
@@ -21,6 +23,10 @@ export default function RegisterForm({ onSwitchToLogin }) {
     confirmPassword: '',
     image: null,
   });
+
+  const onSwitchToLogin = () => {
+    router.push('/login');
+  };
 
   const handleChange = (e) => {
     const name = e?.target?.name;
