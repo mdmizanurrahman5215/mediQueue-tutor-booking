@@ -52,11 +52,14 @@ const handleLogout = async () => {
           toast.success('Logged out successfully!', { id: toastId });
           setIsProfileOpen(false);
           setIsMenuOpen(false);
-          
-          // Toast ta jate user dekhter pay tar jonno choto ekta delay
-        setTimeout(() => {
-              router.push('/login'); // Next.js Client Navigation
-            }, 800);
+
+          // 1. Next.js Client Router Cache ক্লিয়ার করা
+          router.refresh();
+
+          // 2. সেশন পুরোপুরি রিসেট নিশ্চিত করতে ফুল পেজ রিডাইরেক্ট
+          setTimeout(() => {
+            window.location.href = '/login';
+          }, 500);
         },
         onError: (ctx) => {
           toast.error(ctx?.error?.message || 'Failed to logout!', { id: toastId });

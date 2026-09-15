@@ -139,7 +139,7 @@ const handleSubmit = async (e) => {
               >
                 <button
                   type="button"
-                  onClick={handleSocialSignIn("google")}
+                onClick={() => handleSocialSignIn("google")}
                   className="w-full py-3.5 px-4 bg-slate-900/90 hover:bg-slate-800/80 border border-slate-800 hover:border-slate-700 text-white font-medium text-sm rounded-2xl flex items-center justify-center gap-3 transition-all group"
                 >
                   <FaGoogle className="w-5 h-5 text-red-400 group-hover:scale-110 transition-transform" />
