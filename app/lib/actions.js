@@ -4,7 +4,7 @@ import axios from "axios";
 import { headers } from "next/headers";
 import { auth } from "@/app/lib/auth";
 
-const API_URL = "http://localhost:5000";
+const API_URL = process.env.NEXT_PUBLIC_SERVER_URL;
 
 // Reusable: Better Auth থেকে existing JWT নেওয়া
 async function getAuthToken() {
