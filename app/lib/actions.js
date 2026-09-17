@@ -200,3 +200,16 @@ export async function createBooking(formData) {
     };
   }
 }
+
+export async function getMyBookings() {
+     const config = await getAuthConfig();
+  try {
+    const response = await axios.get(`${API_URL}/api/bookings`,config);
+
+    return response.data;
+  } catch (error) {
+    console.error("Failed to fetch tutors:", error);
+
+    return [];
+  }
+}
