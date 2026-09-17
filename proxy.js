@@ -17,5 +17,5 @@ if(!session){
  
  
 export const config = {
-  matcher: ['/add-tutor', '/add-tutor', '/my-tutors', '/my-booked-sessions']
+  matcher: ['/add-tutor', '/my-tutors', '/my-booked-sessions']
 }

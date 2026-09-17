@@ -510,14 +510,16 @@ export default function Navbar() {
                   <Link
                     href="/login"
                     onClick={() => setIsMenuOpen(false)}
-                    className="
-                      py-2.5
-                      text-center
-                      rounded-xl
-                      bg-gray-100
-                      dark:bg-white/5
-                      text-sm font-semibold
-                    "
+                   className="
+                        py-2.5
+                        text-center
+                        rounded-xl
+                        bg-gray-100
+                        dark:bg-white/5
+                        text-gray-900
+                        dark:text-gray-100
+                        text-sm font-semibold
+                      "
                   >
                     Login
                   </Link>

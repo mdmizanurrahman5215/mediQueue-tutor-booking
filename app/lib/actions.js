@@ -142,3 +142,61 @@ export async function fetchTutorDetailsById(id) {
     };
   }
 }
+
+export async function createBooking(formData) {
+  try {
+    const config = await getAuthConfig();
+
+    const payload = {
+    
+      userId: formData?.userId || null,
+      studentName: formData?.studentName,
+      studentEmail: formData?.studentEmail || "",
+      phone: formData?.phone,
+      studentImage: formData?.studentImage || "",
+
+   
+      tutorId: formData?.tutorId,
+      tutorName: formData?.tutorName,
+      tutorEmail: formData?.tutorEmail || "",
+      tutorImage: formData?.tutorImage || "",
+      subject: formData?.subject,
+      hourlyFee: Number(formData?.hourlyFee ?? 0),
+      teachingMode: formData?.teachingMode || "Online",
+
+   
+      bookingDate: formData?.bookingDate
+        ? new Date(formData.bookingDate).toISOString()
+        : new Date().toISOString(),
+
+      preferredTimeSlot:
+        formData?.preferredTimeSlot ?? "05:00 PM - 08:00 PM",
+
+      totalHours: Number(formData?.totalHours ?? 1),
+    };
+
+    const response = await axios.post(
+      `${API_URL}/api/bookings`,
+      payload,
+      config
+    );
+
+    return {
+      success: true,
+      message:
+        response?.data?.message ||
+        "Session booked successfully.",
+      data: response?.data,
+    };
+  } catch (error) {
+    console.error("Failed to create booking:", error);
+
+    return {
+      success: false,
+      message:
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to create booking.",
+    };
+  }
+}
