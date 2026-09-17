@@ -3,10 +3,11 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { BookOpen, Loader2 } from "lucide-react";
-import { getMyBookings } from "@/app/lib/actions";
+import { deleteBooking, getMyBookings } from "@/app/lib/actions";
 
 import BookingCard from "../card/BookingCard";
 import ConfirmDeleteModal from "../modals/ConfirmDeleteModal";
+import toast from "react-hot-toast";
 
 export default function MyBookingsPage() {
   const [bookings, setBookings] = useState([]);
@@ -35,29 +36,34 @@ export default function MyBookingsPage() {
   }, []);
 
 
-  const handleConfirmCancel = async () => {
-    if (!selectedForCancel) return;
+const handleConfirmCancel = async () => {
+  if (!selectedForCancel) return;
 
-    const { bookingId, tutorId } = selectedForCancel;
+  const { bookingId } = selectedForCancel;
 
-    try {
-      const response = await axios.patch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/bookings/${bookingId}/cancel`,
-        { tutorId }
-      );
+  try {
+    const response = await deleteBooking(bookingId);
 
-      if (response?.data?.success) {
-        setBookings((prev) =>
-          prev.map((item) =>
-            item._id === bookingId ? { ...item, status: "Cancelled" } : item
-          )
-        );
-      }
-    } catch (err) {
-      alert(err?.response?.data?.message || "Failed to cancel booking.");
-      throw err; 
+    if (response?.success) {
+      // ১. UI থেকে ডিলিট হওয়া বুকিংটি সরিয়ে ফেলা
+      setBookings((prev) => prev.filter((item) => item._id !== bookingId));
+
+      // ২. সাকসেস টোস্ট দেখানো
+      toast.success(response?.message || "Booking cancelled successfully!");
+
+      // ৩. মোডাল স্টেট ক্লিয়ার করা
+      setSelectedForCancel(null);
+    } else {
+      // ৪. এরর টোস্ট দেখানো
+      toast.error(response?.message || "Failed to cancel booking.");
     }
-  };
+  } catch (err) {
+    console.error("Error cancelling booking:", err);
+    toast.error(
+      err?.response?.data?.message || err?.message || "Failed to cancel booking."
+    );
+  }
+};
 
   if (loading) {
     return (

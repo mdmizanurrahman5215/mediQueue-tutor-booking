@@ -213,3 +213,21 @@ export async function getMyBookings() {
     return [];
   }
 }
+
+export async function deleteBooking(bookingId) {
+  const config = await getAuthConfig();
+  try {
+    const response = await axios.delete(
+      `${API_URL}/api/bookings/${bookingId}`,
+      config
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error("Failed to delete booking:", error);
+    return {
+      success: false,
+      message: error.response?.data?.message || "Failed to delete booking",
+    };
+  }
+}
