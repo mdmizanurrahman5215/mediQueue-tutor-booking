@@ -51,12 +51,10 @@ export async function createTutor(formData) {
 
       qualification: formData?.qualification ?? "",
 
-      availableDays:
-        formData?.availableDays ?? "Sun - Thu",
+      availableDays: formData?.availableDays ?? "Sun - Thu",
 
       availableTimeSlot:
-        formData?.availableTimeSlot ??
-        "05:00 PM - 08:00 PM",
+        formData?.availableTimeSlot ?? "05:00 PM - 08:00 PM",
 
       hourlyFee: Number(formData?.hourlyFee ?? 0),
       totalSlot: Number(formData?.totalSlot ?? 0),
@@ -73,15 +71,14 @@ export async function createTutor(formData) {
       rating: 5.0,
       reviewCount: 0,
 
-      languages: Array.isArray(formData?.languages)
-        ? formData.languages
-        : [],
+      languages: Array.isArray(formData?.languages) ? formData.languages : [],
+      skills: Array.isArray(formData?.skills) ? formData.skills : [],
 
-      skills: Array.isArray(formData?.skills)
-        ? formData.skills
-        : [],
-
-      createdByEmail: formData?.createdByEmail,
+      // 🔑 User Identification & Ownership Fields
+      userId: formData?.userId || "", // unique User ID
+      createdByEmail: formData?.createdByEmail || "",
+      userEmail: formData?.createdByEmail || "",
+      createdByName: formData?.createdByName || "",
 
       createdAt: new Date().toISOString(),
     };
@@ -95,8 +92,7 @@ export async function createTutor(formData) {
     return {
       success: true,
       message:
-        response?.data?.message ||
-        "Tutor profile created successfully.",
+        response?.data?.message || "Tutor profile created successfully.",
       data: response?.data,
     };
   } catch (error) {
@@ -229,5 +225,61 @@ export async function deleteBooking(bookingId) {
       success: false,
       message: error.response?.data?.message || "Failed to delete booking",
     };
+  }
+}
+
+export async function updateBooking(bookingId, formData) {
+  try {
+    const config = await getAuthConfig();
+
+    const payload = {
+      ...(formData?.studentName && { studentName: formData.studentName.trim() }),
+      ...(formData?.phone && { phone: formData.phone.trim() }),
+      ...(formData?.bookingDate && {
+        bookingDate: new Date(formData.bookingDate).toISOString(),
+      }),
+      ...(formData?.teachingMode && { teachingMode: formData.teachingMode }),
+      ...(formData?.notes !== undefined && { notes: formData.notes }),
+    };
+
+    const response = await axios.patch(
+      `${API_URL}/api/bookings/${bookingId}`,
+      payload,
+      config
+    );
+
+    return {
+      success: true,
+      message: response?.data?.message || "Booking updated successfully.",
+      data: response?.data,
+    };
+  } catch (error) {
+    console.error("Failed to update booking:", error);
+
+    return {
+      success: false,
+      message:
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to update booking.",
+    };
+  }
+}
+
+export async function getMyTutors(userId) {
+  try {
+    const config = await getAuthConfig();
+
+    const response = await axios.get(`${API_URL}/api/tutors/my-tutors`, {
+      ...config,
+      params: { userId }, // কোয়েরি প্যারামিটার নিরাপদে পাস করার জন্য
+    });
+    console.log({response});
+    
+
+    return response?.data?.data || [];
+  } catch (error) {
+    console.error("Failed to fetch my tutors:", error);
+    return [];
   }
 }

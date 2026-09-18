@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { motion } from "framer-motion";
 import {
   Calendar,
@@ -15,11 +14,10 @@ import {
   Sparkles,
 } from "lucide-react";
 
-export default function BookingCard({ item, onDeleteClick }) {
+export default function BookingCard({ item, onDeleteClick, onEditClick }) {
   const isCancelled = item?.status === "Cancelled";
   const isConfirmed = item?.status === "Confirmed";
 
-  
   const getStatusConfig = () => {
     if (isCancelled) {
       return {
@@ -60,17 +58,15 @@ export default function BookingCard({ item, onDeleteClick }) {
         isCancelled ? "opacity-60 grayscale-[40%]" : ""
       }`}
     >
-  
       {!isCancelled && (
         <div
           className={`absolute -inset-px rounded-[23px] bg-gradient-to-b ${config.glowColor} opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-sm pointer-events-none`}
         />
       )}
 
-      {/* Main Glass Body - Explicit Rounded Borders */}
+      {/* Main Glass Body */}
       <div className="relative rounded-[22px] bg-slate-900/90 dark:bg-slate-950/80 backdrop-blur-xl border border-slate-800/80 group-hover:border-slate-700/80 p-4 shadow-xl shadow-black/40 transition-all duration-300 overflow-hidden">
-        
-        {/* Header: Avatar, Name & Subject */}
+        {/* Header */}
         <div className="flex items-center gap-3 pb-3 border-b border-slate-800/60">
           <div className="relative shrink-0">
             <img
@@ -170,15 +166,14 @@ export default function BookingCard({ item, onDeleteClick }) {
         {/* Actions */}
         {!isCancelled && (
           <div className="pt-3 mt-2 border-t border-slate-800/60 flex gap-2">
-            <Link href={`/bookings/update/${item?._id}`} className="flex-1">
-              <motion.button
-                whileTap={{ scale: 0.96 }}
-                className="w-full py-1.5 px-2 bg-slate-800/80 hover:bg-slate-700/80 text-slate-200 rounded-xl text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-all border border-slate-700/40"
-              >
-                <Edit3 className="w-3 h-3 text-cyan-400" />
-                Edit
-              </motion.button>
-            </Link>
+            <motion.button
+              whileTap={{ scale: 0.96 }}
+              onClick={() => onEditClick(item)}
+              className="flex-1 py-1.5 px-2 bg-slate-800/80 hover:bg-slate-700/80 text-slate-200 rounded-xl text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-all border border-slate-700/40"
+            >
+              <Edit3 className="w-3 h-3 text-cyan-400" />
+              Edit
+            </motion.button>
 
             <motion.button
               whileTap={{ scale: 0.96 }}

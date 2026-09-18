@@ -10,10 +10,13 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { createTutor } from '@/app/lib/actions';
+import { authClient } from '@/app/lib/auth-client';
 
 export default function AddTutorForm() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const { data: session, isPending } = authClient.useSession();
+    const user = session?.user;
 
   // Form Field State
   const [formData, setFormData] = useState({
@@ -71,31 +74,40 @@ export default function AddTutorForm() {
   };
 
   // Handle Form Submission
-  const handleSubmit = async (e) => {
-    e?.preventDefault();
-    setLoading(true);
+ const handleSubmit = async (e) => {
+  e?.preventDefault();
 
-    // Dynamic Payload Creation
-    const payload = {
-      ...formData,
-      skills,
-      languages,
-      createdByEmail: 'user@example.com',
-    };
+  // ইউজার লগইন না থাকলে হ্যান্ডেল করা
+  if (!user?.email && !user?.id) {
+    toast.error("You must be logged in to create a tutor profile.");
+    return;
+  }
 
-    const result = await createTutor(payload);
+  setLoading(true);
 
-    setLoading(false);
-
-    if (result?.success) {
-      toast.success(result?.message ?? 'Tutor profile created successfully!');
-      setTimeout(() => {
-        router?.push('/tutors');
-      }, 500);
-    } else {
-      toast.error(result?.message ?? 'Something went wrong!');
-    }
+  // Dynamic Payload Creation (Real Authenticated User Data with userId)
+  const payload = {
+    ...formData,
+    skills,
+    languages,
+    userId: user?.id || user?._id || "", // 🔑 User ID
+    createdByEmail: user?.email || "",
+    createdByName: user?.name || user?.displayName || "",
   };
+
+  const result = await createTutor(payload);
+
+  setLoading(false);
+
+  if (result?.success) {
+    toast.success(result?.message ?? "Tutor profile created successfully!");
+    setTimeout(() => {
+      router?.push("/my-tutors");
+    }, 500);
+  } else {
+    toast.error(result?.message ?? "Something went wrong!");
+  }
+};
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 py-10 transition-colors">
