@@ -4,6 +4,7 @@ import axios from "axios";
 import { headers } from "next/headers";
 import { auth } from "@/app/lib/auth";
 
+
 const API_URL = process.env.NEXT_PUBLIC_SERVER_URL;
 
 // Reusable: Better Auth থেকে existing JWT নেওয়া
@@ -107,7 +108,67 @@ export async function createTutor(formData) {
     };
   }
 }
+export async function updateTutor(id, formData) {
+  try {
+    const config = await getAuthConfig();
 
+    const payload = {
+      tutorName: formData?.tutorName,
+      image: formData?.image,
+      subject: formData?.subject,
+      bio: formData?.bio,
+
+      qualification: formData?.qualification ?? "",
+
+      availableDays: formData?.availableDays ?? "Sun - Thu",
+
+      availableTimeSlot:
+        formData?.availableTimeSlot ?? "05:00 PM - 08:00 PM",
+
+      hourlyFee: Number(formData?.hourlyFee ?? 0),
+      totalSlot: Number(formData?.totalSlot ?? 0),
+
+      sessionStartDate: formData?.sessionStartDate
+        ? new Date(formData.sessionStartDate).toISOString()
+        : new Date().toISOString(),
+
+      institution: formData?.institution,
+      experience: formData?.experience,
+      location: formData?.location,
+      teachingMode: formData?.teachingMode,
+
+      languages: Array.isArray(formData?.languages) ? formData.languages : [],
+      skills: Array.isArray(formData?.skills) ? formData.skills : [],
+
+      // 🔑 Tracking update time
+      updatedAt: new Date().toISOString(),
+    };
+
+    // Axios PUT Request for updating existing tutor profile
+    const response = await axios.put(
+      `${API_URL}/api/tutors/${id}`,
+      payload,
+      config
+    );
+
+    return {
+      success: true,
+      message:
+        response?.data?.message || "Tutor profile updated successfully.",
+      data: response?.data,
+    };
+  } catch (error) {
+    console.error("Failed to update tutor profile:", error);
+
+    return {
+      success: false,
+      message:
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to update tutor profile.",
+    };
+  }
+}
 // Get Tutor Details By ID
 export async function fetchTutorDetailsById(id) {
   try {
@@ -283,3 +344,26 @@ export async function getMyTutors(userId) {
     return [];
   }
 }
+
+
+export async function deleteTutorWithBookings(tutorId) {
+  try {
+    const config = await getAuthConfig();
+    
+    const response = await axios.delete(
+      `${API_URL}/api/tutors/${tutorId}`,
+      config
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Failed to delete tutor:", error);
+    return {
+      success: false,
+      message: error.response?.data?.message || "Failed to delete tutor",
+    };
+  }
+}
+
+
+ 
+

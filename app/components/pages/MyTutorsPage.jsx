@@ -2,9 +2,13 @@
 
 import React, { useEffect, useState } from "react";
 import DynamicTable from "../common/DynamicTable";
-import { getMyTutors } from "@/app/lib/actions";
+
+import { getMyTutors, deleteTutorWithBookings } from "@/app/lib/actions";
 import { authClient } from "@/app/lib/auth-client";
+import { useRouter } from 'next/navigation';
 import { Loader2, Calendar, MapPin, Laptop, User as UserIcon, Clock, Users } from "lucide-react";
+import ConfirmDeleteModal from "../modals/ConfirmDeleteModal";
+import toast from "react-hot-toast";
 
 const MyTutorsPage = () => {
   const { data: session, isPending: isAuthPending } = authClient.useSession();
@@ -12,8 +16,14 @@ const MyTutorsPage = () => {
 
   const [tutors, setTutors] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  // 🟢 Modal management states
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedTutor, setSelectedTutor] = useState(null);
 
-  // 📋 Assignment Requirement অনুযায়ী Table Columns Setup
+  const router = useRouter();
+
+  // 📋 Table Columns Setup
   const columns = [
     {
       key: "tutorName",
@@ -29,7 +39,6 @@ const MyTutorsPage = () => {
             <h4 className="font-semibold text-slate-900 dark:text-slate-100">
               {row?.tutorName || "N/A"}
             </h4>
-            
           </div>
         </div>
       ),
@@ -148,23 +157,57 @@ const MyTutorsPage = () => {
 
   // Action Handlers
   const handleView = (tutor) => {
-    console.log("Viewing tutor:", tutor);
-    alert(`Viewing details of ${tutor.tutorName}`);
+    const tutorId = tutor?._id || tutor?.id;
+    if (tutorId) {
+      router.push(`/tutors/${tutorId}`);
+    } else {
+      console.warn("Tutor ID is missing:", tutor);
+    }
   };
 
   const handleEdit = (tutor) => {
-    console.log("Editing tutor:", tutor);
-    alert(`Editing ${tutor.tutorName}`);
-  };
-
-  const handleDelete = (tutor) => {
-    console.log("Deleting tutor:", tutor);
-    if (confirm(`Are you sure you want to delete ${tutor.tutorName}?`)) {
-      alert(`${tutor.tutorName} deleted.`);
+    const tutorId = tutor?._id || tutor?.id;
+    if (tutorId) {
+      router.push(`/add-tutor?editId=${tutorId}`);
     }
   };
-  console.log({tutors});
+
   
+  const handleDeleteClick = (tutor) => {
+    setSelectedTutor(tutor);
+    setIsModalOpen(true);
+  };
+
+
+ const handleConfirmDelete = async () => {
+    const tutorId = selectedTutor?._id || selectedTutor?.id;
+    if (!tutorId) return;
+
+   
+    const toastId = toast.loading("Deleting tutor...");
+
+    try {
+      const result = await deleteTutorWithBookings(tutorId);
+      
+      console.log({result});
+
+
+      if (result?.success) {
+       console.log("execute it");
+       
+        setTutors((prev) => prev.filter((item) => (item._id || item.id) !== tutorId));
+        
+        // Success Toast
+        toast.success(result?.message || "Tutor deleted successfully!", { id: toastId });
+      } else {
+       console.log(result?.message);
+       
+        toast.error(result?.message || "Failed to delete tutor", { id: toastId });
+      }
+    } catch (error) {
+      toast.error("An unexpected error occurred", { id: toastId });
+    }
+  };
 
   return (
     <div className="p-4 sm:p-6 bg-slate-50 dark:bg-slate-950 min-h-screen text-slate-800 dark:text-slate-200">
@@ -192,11 +235,24 @@ const MyTutorsPage = () => {
             actions={{
               onView: handleView,
               onEdit: handleEdit,
-              onDelete: handleDelete,
+              onDelete: handleDeleteClick, 
             }}
           />
         )}
       </div>
+
+      
+      <ConfirmDeleteModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onConfirm={handleConfirmDelete}
+        title="Delete Tutor?"
+        message={`Are you sure you want to delete ${
+          selectedTutor?.tutorName || "this tutor"
+        }? This will also delete all associated booked sessions.`}
+        cancelText="Cancel"
+        confirmText="Yes, Delete"
+      />
     </div>
   );
 };

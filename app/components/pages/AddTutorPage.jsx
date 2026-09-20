@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { 
   ArrowLeft, User, Image as ImageIcon, BookOpen, Clock, 
@@ -9,32 +9,43 @@ import {
   Users, Globe, Code, Plus, Trash2, Loader2 
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { createTutor } from '@/app/lib/actions';
+import { createTutor, fetchTutorDetailsById, updateTutor } from '@/app/lib/actions'; // getTutorById & updateTutor আপনার server actions থেকে ইম্পোর্ট করুন
 import { authClient } from '@/app/lib/auth-client';
+
+const initialFormState = {
+  tutorName: '',
+  subject: '',
+  image: '',
+  bio: '',
+  institution: '',
+  qualification: '',
+  experience: '1 Year',
+  location: '',
+  hourlyFee: '',
+  totalSlot: '',
+  teachingMode: 'Online',
+  sessionStartDate: '',
+  availableDays: '',
+  availableTimeSlot: '',
+};
 
 export default function AddTutorForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  console.log({searchParams});
+  
+  
+  // 1. URL থেকে editId বা id পারাম ধরা
+  const editId = searchParams.get('editId') || searchParams.get('id');
+   console.log({editId});
+
   const [loading, setLoading] = useState(false);
+  const [fetchingData, setFetchingData] = useState(false);
   const { data: session, isPending } = authClient.useSession();
-    const user = session?.user;
+  const user = session?.user;
 
   // Form Field State
-  const [formData, setFormData] = useState({
-    tutorName: '',
-    subject: '',
-    image: '',
-    bio: '',
-    institution: '',
-    qualification: '',
-    experience: '1 Year',
-    location: '',
-    hourlyFee: '',
-    totalSlot: '',
-    teachingMode: 'Online',
-    sessionStartDate: '',
-    availableDays: '',
-    availableTimeSlot: '',
-  });
+  const [formData, setFormData] = useState(initialFormState);
 
   // Array States for Skills & Languages
   const [skills, setSkills] = useState([]);
@@ -42,6 +53,55 @@ export default function AddTutorForm() {
   
   const [languages, setLanguages] = useState([]);
   const [languageInput, setLanguageInput] = useState('');
+
+  // 2. Edit ID থাকলে Database থেকে ডাটা এনে ফর্ম Fill করা
+  useEffect(() => {
+    if (!editId) return;
+
+    const fetchTutorDetails = async () => {
+      setFetchingData(true);
+      try {
+        // যদি Server Action ব্যবহার করেন:
+        const result = await fetchTutorDetailsById(editId);
+
+        // অথবা API Route ব্যবহার করলে: 
+        // const res = await fetch(`/api/tutors/${editId}`);
+        // const result = await res.json();
+
+        const tutor = result?.data || result?.tutor || result;
+
+        if (tutor) {
+          setFormData({
+            tutorName: tutor.tutorName || '',
+            subject: tutor.subject || '',
+            image: tutor.image || '',
+            bio: tutor.bio || '',
+            institution: tutor.institution || '',
+            qualification: tutor.qualification || '',
+            experience: tutor.experience || '1 Year',
+            location: tutor.location || '',
+            hourlyFee: tutor.hourlyFee ? String(tutor.hourlyFee) : '',
+            totalSlot: tutor.totalSlot ? String(tutor.totalSlot) : '',
+            teachingMode: tutor.teachingMode || 'Online',
+            // Date format YYYY-MM-DD নিশ্চিত করা (HTML input type="date" এর জন্য)
+            sessionStartDate: tutor.sessionStartDate ? tutor.sessionStartDate.split('T')[0] : '',
+            availableDays: tutor.availableDays || '',
+            availableTimeSlot: tutor.availableTimeSlot || '',
+          });
+
+          setSkills(Array.isArray(tutor.skills) ? tutor.skills : []);
+          setLanguages(Array.isArray(tutor.languages) ? tutor.languages : []);
+        }
+      } catch (error) {
+        console.error("Error fetching tutor profile:", error);
+        toast.error("Failed to load tutor data for editing.");
+      } finally {
+        setFetchingData(false);
+      }
+    };
+
+    fetchTutorDetails();
+  }, [editId]);
 
   // Handle Input Change
   const handleChange = (e) => {
@@ -51,8 +111,9 @@ export default function AddTutorForm() {
 
   // Skill Handlers
   const handleAddSkill = () => {
-    if (skillInput?.trim()) {
-      setSkills((prev) => [...prev, skillInput.trim()]);
+    const trimmed = skillInput?.trim();
+    if (trimmed && !skills.includes(trimmed)) {
+      setSkills((prev) => [...prev, trimmed]);
       setSkillInput('');
     }
   };
@@ -63,8 +124,9 @@ export default function AddTutorForm() {
 
   // Language Handlers
   const handleAddLanguage = () => {
-    if (languageInput?.trim()) {
-      setLanguages((prev) => [...prev, languageInput.trim()]);
+    const trimmed = languageInput?.trim();
+    if (trimmed && !languages.includes(trimmed)) {
+      setLanguages((prev) => [...prev, trimmed]);
       setLanguageInput('');
     }
   };
@@ -73,41 +135,65 @@ export default function AddTutorForm() {
     setLanguages((prev) => prev.filter((_, idx) => idx !== index));
   };
 
-  // Handle Form Submission
- const handleSubmit = async (e) => {
-  e?.preventDefault();
+  // Handle Form Submission (Create or Update)
+  const handleSubmit = async (e) => {
+    e?.preventDefault();
 
-  // ইউজার লগইন না থাকলে হ্যান্ডেল করা
-  if (!user?.email && !user?.id) {
-    toast.error("You must be logged in to create a tutor profile.");
-    return;
-  }
+    if (isPending) return;
 
-  setLoading(true);
+    // Authentication Check
+    if (!user?.email && !user?.id) {
+      toast.error("You must be logged in to save a tutor profile.");
+      return;
+    }
 
-  // Dynamic Payload Creation (Real Authenticated User Data with userId)
-  const payload = {
-    ...formData,
-    skills,
-    languages,
-    userId: user?.id || user?._id || "", // 🔑 User ID
-    createdByEmail: user?.email || "",
-    createdByName: user?.name || user?.displayName || "",
+    setLoading(true);
+
+    try {
+      const payload = {
+        ...formData,
+        hourlyFee: Number(formData.hourlyFee) || 0,
+        totalSlot: Number(formData.totalSlot) || 0,
+        skills,
+        languages,
+        userId: user?.id || user?._id || "", 
+        createdByEmail: user?.email || "",
+        createdByName: user?.name || user?.displayName || "",
+      };
+
+      // Edit Mode হলে UpdateAction, নইলে CreateAction
+      let result;
+      if (editId) {
+        result = await updateTutor(editId, payload);
+      } else {
+        result = await createTutor(payload);
+      }
+
+      if (result?.success) {
+        toast.success(result?.message ?? (editId ? "Profile updated successfully!" : "Profile created successfully!"));
+        
+        setTimeout(() => {
+          router?.push("/my-tutors");
+        }, 500);
+      } else {
+        toast.error(result?.message ?? "Something went wrong!");
+      }
+    } catch (error) {
+      toast.error("An unexpected error occurred. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const result = await createTutor(payload);
-
-  setLoading(false);
-
-  if (result?.success) {
-    toast.success(result?.message ?? "Tutor profile created successfully!");
-    setTimeout(() => {
-      router?.push("/my-tutors");
-    }, 500);
-  } else {
-    toast.error(result?.message ?? "Something went wrong!");
+  // 3. Data Load হওয়ার সময় Spinner দেখানো
+  if (fetchingData) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-950">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-2" />
+        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Loading tutor profile for edit...</p>
+      </div>
+    );
   }
-};
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 py-10 transition-colors">
@@ -124,11 +210,15 @@ export default function AddTutorForm() {
           </Link>
         </div>
 
-        {/* Page Title */}
+        {/* Dynamic Title */}
         <div className="space-y-1">
-          <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white">Add New Tutor Profile</h1>
+          <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white">
+            {editId ? 'Edit Tutor Profile' : 'Add New Tutor Profile'}
+          </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            Fill in the detailed information below to list a new qualified tutor on the platform.
+            {editId 
+              ? 'Update the tutor information below and save your changes.' 
+              : 'Fill in the detailed information below to list a new qualified tutor on the platform.'}
           </p>
         </div>
 
@@ -197,7 +287,7 @@ export default function AddTutorForm() {
                 </label>
                 <textarea
                   name="bio"
-                  rows="3"
+                  rows={3}
                   required
                   value={formData?.bio}
                   onChange={handleChange}
@@ -405,6 +495,12 @@ export default function AddTutorForm() {
                     type="text"
                     value={skillInput}
                     onChange={(e) => setSkillInput(e?.target?.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddSkill();
+                      }
+                    }}
                     placeholder="e.g. Calculus"
                     className="flex-1 px-4 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
@@ -422,7 +518,7 @@ export default function AddTutorForm() {
                   {skills?.map((skill, idx) => (
                     <span key={idx} className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 dark:bg-gray-800 text-blue-700 dark:text-blue-400 rounded-full text-xs font-semibold">
                       {skill}
-                      <button type="button" onClick={() => handleRemoveSkill(idx)} className="hover:text-red-500">
+                      <button type="button" onClick={() => handleRemoveSkill(idx)} className="hover:text-red-500 transition-colors">
                         <Trash2 className="w-3 h-3" />
                       </button>
                     </span>
@@ -440,6 +536,12 @@ export default function AddTutorForm() {
                     type="text"
                     value={languageInput}
                     onChange={(e) => setLanguageInput(e?.target?.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddLanguage();
+                      }
+                    }}
                     placeholder="e.g. English"
                     className="flex-1 px-4 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
@@ -457,7 +559,7 @@ export default function AddTutorForm() {
                   {languages?.map((lang, idx) => (
                     <span key={idx} className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full text-xs font-semibold">
                       {lang}
-                      <button type="button" onClick={() => handleRemoveLanguage(idx)} className="hover:text-red-500">
+                      <button type="button" onClick={() => handleRemoveLanguage(idx)} className="hover:text-red-500 transition-colors">
                         <Trash2 className="w-3 h-3" />
                       </button>
                     </span>
@@ -472,16 +574,16 @@ export default function AddTutorForm() {
           <div className="pt-4 border-t border-gray-100 dark:border-gray-800">
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || isPending}
               className="w-full py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-2xl font-bold text-sm transition-all shadow-lg shadow-blue-500/20 flex items-center justify-center space-x-2"
             >
               {loading ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  <span>Saving Tutor Profile...</span>
+                  <span>{editId ? 'Updating Profile...' : 'Saving Tutor Profile...'}</span>
                 </>
               ) : (
-                <span>Publish Tutor Profile</span>
+                <span>{editId ? 'Update Tutor Profile' : 'Publish Tutor Profile'}</span>
               )}
             </button>
           </div>
