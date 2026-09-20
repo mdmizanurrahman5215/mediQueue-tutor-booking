@@ -2,8 +2,8 @@
 
 import axios from "axios";
 import { headers } from "next/headers";
+import { revalidateTag, revalidatePath } from "next/cache"; // 🟢 Cache Invalidation Utils
 import { auth } from "@/app/lib/auth";
-
 
 const API_URL = process.env.NEXT_PUBLIC_SERVER_URL;
 
@@ -49,56 +49,43 @@ export async function createTutor(formData) {
       image: formData?.image,
       subject: formData?.subject,
       bio: formData?.bio,
-
       qualification: formData?.qualification ?? "",
-
       availableDays: formData?.availableDays ?? "Sun - Thu",
-
-      availableTimeSlot:
-        formData?.availableTimeSlot ?? "05:00 PM - 08:00 PM",
-
+      availableTimeSlot: formData?.availableTimeSlot ?? "05:00 PM - 08:00 PM",
       hourlyFee: Number(formData?.hourlyFee ?? 0),
       totalSlot: Number(formData?.totalSlot ?? 0),
-
       sessionStartDate: formData?.sessionStartDate
         ? new Date(formData.sessionStartDate).toISOString()
         : new Date().toISOString(),
-
       institution: formData?.institution,
       experience: formData?.experience,
       location: formData?.location,
       teachingMode: formData?.teachingMode,
-
       rating: 5.0,
       reviewCount: 0,
-
       languages: Array.isArray(formData?.languages) ? formData.languages : [],
       skills: Array.isArray(formData?.skills) ? formData.skills : [],
-
-      // 🔑 User Identification & Ownership Fields
-      userId: formData?.userId || "", // unique User ID
+      userId: formData?.userId || "",
       createdByEmail: formData?.createdByEmail || "",
       userEmail: formData?.createdByEmail || "",
       createdByName: formData?.createdByName || "",
-
       createdAt: new Date().toISOString(),
     };
 
-    const response = await axios.post(
-      `${API_URL}/api/tutors`,
-      payload,
-      config
-    );
+    const response = await axios.post(`${API_URL}/api/tutors`, payload, config);
+
+    // 🟢 Cache Invalidation: টিউটর ক্রিয়েট হলে পাবলিক টিউটর লিস্ট ও পেজের ক্যাশ মুছে যাবে
+    revalidateTag("tutors-list");
+    revalidatePath("/tutors");
+    revalidatePath("/my-tutors");
 
     return {
       success: true,
-      message:
-        response?.data?.message || "Tutor profile created successfully.",
+      message: response?.data?.message || "Tutor profile created successfully.",
       data: response?.data,
     };
   } catch (error) {
     console.error("Failed to create tutor profile:", error);
-
     return {
       success: false,
       message:
@@ -108,6 +95,8 @@ export async function createTutor(formData) {
     };
   }
 }
+
+// Update Tutor
 export async function updateTutor(id, formData) {
   try {
     const config = await getAuthConfig();
@@ -117,49 +106,38 @@ export async function updateTutor(id, formData) {
       image: formData?.image,
       subject: formData?.subject,
       bio: formData?.bio,
-
       qualification: formData?.qualification ?? "",
-
       availableDays: formData?.availableDays ?? "Sun - Thu",
-
-      availableTimeSlot:
-        formData?.availableTimeSlot ?? "05:00 PM - 08:00 PM",
-
+      availableTimeSlot: formData?.availableTimeSlot ?? "05:00 PM - 08:00 PM",
       hourlyFee: Number(formData?.hourlyFee ?? 0),
       totalSlot: Number(formData?.totalSlot ?? 0),
-
       sessionStartDate: formData?.sessionStartDate
         ? new Date(formData.sessionStartDate).toISOString()
         : new Date().toISOString(),
-
       institution: formData?.institution,
       experience: formData?.experience,
       location: formData?.location,
       teachingMode: formData?.teachingMode,
-
       languages: Array.isArray(formData?.languages) ? formData.languages : [],
       skills: Array.isArray(formData?.skills) ? formData.skills : [],
-
-      // 🔑 Tracking update time
       updatedAt: new Date().toISOString(),
     };
 
-    // Axios PUT Request for updating existing tutor profile
-    const response = await axios.put(
-      `${API_URL}/api/tutors/${id}`,
-      payload,
-      config
-    );
+    const response = await axios.put(`${API_URL}/api/tutors/${id}`, payload, config);
+
+    // 🟢 Cache Invalidation: নির্দিষ্ট টিউটরের প্রোফাইল ও লিস্ট রিফ্রেশ করবে
+    revalidateTag("tutors-list");
+    revalidateTag(`tutor-${id}`);
+    revalidatePath(`/tutors/${id}`);
+    revalidatePath("/my-tutors");
 
     return {
       success: true,
-      message:
-        response?.data?.message || "Tutor profile updated successfully.",
+      message: response?.data?.message || "Tutor profile updated successfully.",
       data: response?.data,
     };
   } catch (error) {
     console.error("Failed to update tutor profile:", error);
-
     return {
       success: false,
       message:
@@ -169,7 +147,8 @@ export async function updateTutor(id, formData) {
     };
   }
 }
-// Get Tutor Details By ID
+
+// Get Tutor Details By ID (No cache needed here for form editing, fetches fresh data)
 export async function fetchTutorDetailsById(id) {
   try {
     if (!id) {
@@ -177,11 +156,7 @@ export async function fetchTutorDetailsById(id) {
     }
 
     const config = await getAuthConfig();
-
-    const response = await axios.get(
-      `${API_URL}/api/tutors/${id}`,
-      config
-    );
+    const response = await axios.get(`${API_URL}/api/tutors/${id}`, config);
 
     return {
       success: true,
@@ -189,7 +164,6 @@ export async function fetchTutorDetailsById(id) {
     };
   } catch (error) {
     console.error("Failed to fetch tutor details:", error);
-
     return {
       success: false,
       message:
@@ -200,19 +174,17 @@ export async function fetchTutorDetailsById(id) {
   }
 }
 
+// Create Booking
 export async function createBooking(formData) {
   try {
     const config = await getAuthConfig();
 
     const payload = {
-    
       userId: formData?.userId || null,
       studentName: formData?.studentName,
       studentEmail: formData?.studentEmail || "",
       phone: formData?.phone,
       studentImage: formData?.studentImage || "",
-
-   
       tutorId: formData?.tutorId,
       tutorName: formData?.tutorName,
       tutorEmail: formData?.tutorEmail || "",
@@ -220,34 +192,25 @@ export async function createBooking(formData) {
       subject: formData?.subject,
       hourlyFee: Number(formData?.hourlyFee ?? 0),
       teachingMode: formData?.teachingMode || "Online",
-
-   
       bookingDate: formData?.bookingDate
         ? new Date(formData.bookingDate).toISOString()
         : new Date().toISOString(),
-
-      preferredTimeSlot:
-        formData?.preferredTimeSlot ?? "05:00 PM - 08:00 PM",
-
+      preferredTimeSlot: formData?.preferredTimeSlot ?? "05:00 PM - 08:00 PM",
       totalHours: Number(formData?.totalHours ?? 1),
     };
 
-    const response = await axios.post(
-      `${API_URL}/api/bookings`,
-      payload,
-      config
-    );
+    const response = await axios.post(`${API_URL}/api/bookings`, payload, config);
+
+    // 🟢 Cache Invalidation: বুকিং পেজ রিফ্রেশ করে তাজা ডাটা এনসিওর করবে
+    revalidatePath("/my-booked-sessions");
 
     return {
       success: true,
-      message:
-        response?.data?.message ||
-        "Session booked successfully.",
+      message: response?.data?.message || "Session booked successfully.",
       data: response?.data,
     };
   } catch (error) {
     console.error("Failed to create booking:", error);
-
     return {
       success: false,
       message:
@@ -258,15 +221,14 @@ export async function createBooking(formData) {
   }
 }
 
+// Get My Bookings (🔴 Private User Data - Never Cached)
 export async function getMyBookings() {
-     const config = await getAuthConfig();
+  const config = await getAuthConfig();
   try {
-    const response = await axios.get(`${API_URL}/api/bookings`,config);
-
+    const response = await axios.get(`${API_URL}/api/bookings`, config);
     return response.data;
   } catch (error) {
-    console.error("Failed to fetch tutors:", error);
-
+    console.error("Failed to fetch bookings:", error);
     return [];
   }
 }
@@ -274,10 +236,10 @@ export async function getMyBookings() {
 export async function deleteBooking(bookingId) {
   const config = await getAuthConfig();
   try {
-    const response = await axios.delete(
-      `${API_URL}/api/bookings/${bookingId}`,
-      config
-    );
+    const response = await axios.delete(`${API_URL}/api/bookings/${bookingId}`, config);
+
+    // 🟢 Cache Invalidation
+    revalidatePath("/my-booked-sessions");
 
     return response.data;
   } catch (error) {
@@ -289,6 +251,7 @@ export async function deleteBooking(bookingId) {
   }
 }
 
+// Update Booking
 export async function updateBooking(bookingId, formData) {
   try {
     const config = await getAuthConfig();
@@ -309,6 +272,9 @@ export async function updateBooking(bookingId, formData) {
       config
     );
 
+    // 🟢 Cache Invalidation
+    revalidatePath("/my-booked-sessions");
+
     return {
       success: true,
       message: response?.data?.message || "Booking updated successfully.",
@@ -316,7 +282,6 @@ export async function updateBooking(bookingId, formData) {
     };
   } catch (error) {
     console.error("Failed to update booking:", error);
-
     return {
       success: false,
       message:
@@ -327,16 +292,15 @@ export async function updateBooking(bookingId, formData) {
   }
 }
 
+// Get My Tutors (🔴 Private User Data - Never Cached)
 export async function getMyTutors(userId) {
   try {
     const config = await getAuthConfig();
 
     const response = await axios.get(`${API_URL}/api/tutors/my-tutors`, {
       ...config,
-      params: { userId }, // কোয়েরি প্যারামিটার নিরাপদে পাস করার জন্য
+      params: { userId },
     });
-    console.log({response});
-    
 
     return response?.data?.data || [];
   } catch (error) {
@@ -345,15 +309,19 @@ export async function getMyTutors(userId) {
   }
 }
 
-
+// Delete Tutor
 export async function deleteTutorWithBookings(tutorId) {
   try {
     const config = await getAuthConfig();
-    
-    const response = await axios.delete(
-      `${API_URL}/api/tutors/${tutorId}`,
-      config
-    );
+
+    const response = await axios.delete(`${API_URL}/api/tutors/${tutorId}`, config);
+
+    // 🟢 Cache Invalidation: টিউটর মুছে গেলে সাথে সাথে ক্যাশ ক্লিয়ার হবে
+    revalidateTag("tutors-list");
+    revalidateTag(`tutor-${tutorId}`);
+    revalidatePath("/tutors");
+    revalidatePath("/my-tutors");
+
     return response.data;
   } catch (error) {
     console.error("Failed to delete tutor:", error);
@@ -363,7 +331,3 @@ export async function deleteTutorWithBookings(tutorId) {
     };
   }
 }
-
-
- 
-
