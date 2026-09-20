@@ -2,12 +2,12 @@
 
 import axios from "axios";
 import { headers } from "next/headers";
-import { revalidateTag, revalidatePath } from "next/cache"; // 🟢 Cache Invalidation Utils
+import { revalidateTag, revalidatePath } from "next/cache"; 
 import { auth } from "@/app/lib/auth";
 
 const API_URL = process.env.NEXT_PUBLIC_SERVER_URL;
 
-// Reusable: Better Auth থেকে existing JWT নেওয়া
+
 async function getAuthToken() {
   try {
     const requestHeaders = await headers();
@@ -23,7 +23,7 @@ async function getAuthToken() {
   }
 }
 
-// Reusable: authenticated axios config
+
 async function getAuthConfig() {
   const token = await getAuthToken();
 
@@ -39,15 +39,19 @@ async function getAuthConfig() {
   };
 }
 
-// Create Tutor
+
 export async function createTutor(formData) {
   try {
     const config = await getAuthConfig();
 
+
+    const rawSubjects = formData?.subjects || formData?.subject || [];
+
     const payload = {
       tutorName: formData?.tutorName,
       image: formData?.image,
-      subject: formData?.subject,
+      subjects: Array.isArray(rawSubjects) ? rawSubjects : [rawSubjects],
+      subject: Array.isArray(rawSubjects) ? rawSubjects.join(", ") : rawSubjects,
       bio: formData?.bio,
       qualification: formData?.qualification ?? "",
       availableDays: formData?.availableDays ?? "Sun - Thu",
@@ -74,7 +78,7 @@ export async function createTutor(formData) {
 
     const response = await axios.post(`${API_URL}/api/tutors`, payload, config);
 
-    // 🟢 Cache Invalidation: টিউটর ক্রিয়েট হলে পাবলিক টিউটর লিস্ট ও পেজের ক্যাশ মুছে যাবে
+   
     revalidateTag("tutors-list");
     revalidatePath("/tutors");
     revalidatePath("/my-tutors");
@@ -96,15 +100,21 @@ export async function createTutor(formData) {
   }
 }
 
-// Update Tutor
+
 export async function updateTutor(id, formData) {
   try {
     const config = await getAuthConfig();
 
+ 
+    const rawSubjects = formData?.subjects || formData?.subject || [];
+    const subjectsArray = Array.isArray(rawSubjects) ? rawSubjects : [rawSubjects];
+    const subjectString = Array.isArray(rawSubjects) ? rawSubjects.join(", ") : rawSubjects;
+
     const payload = {
       tutorName: formData?.tutorName,
       image: formData?.image,
-      subject: formData?.subject,
+      subjects: subjectsArray,
+      subject: subjectString,
       bio: formData?.bio,
       qualification: formData?.qualification ?? "",
       availableDays: formData?.availableDays ?? "Sun - Thu",
@@ -125,7 +135,7 @@ export async function updateTutor(id, formData) {
 
     const response = await axios.put(`${API_URL}/api/tutors/${id}`, payload, config);
 
-    // 🟢 Cache Invalidation: নির্দিষ্ট টিউটরের প্রোফাইল ও লিস্ট রিফ্রেশ করবে
+   
     revalidateTag("tutors-list");
     revalidateTag(`tutor-${id}`);
     revalidatePath(`/tutors/${id}`);
@@ -148,7 +158,7 @@ export async function updateTutor(id, formData) {
   }
 }
 
-// Get Tutor Details By ID (No cache needed here for form editing, fetches fresh data)
+
 export async function fetchTutorDetailsById(id) {
   try {
     if (!id) {
@@ -174,7 +184,7 @@ export async function fetchTutorDetailsById(id) {
   }
 }
 
-// Create Booking
+
 export async function createBooking(formData) {
   try {
     const config = await getAuthConfig();
@@ -201,7 +211,7 @@ export async function createBooking(formData) {
 
     const response = await axios.post(`${API_URL}/api/bookings`, payload, config);
 
-    // 🟢 Cache Invalidation: বুকিং পেজ রিফ্রেশ করে তাজা ডাটা এনসিওর করবে
+  
     revalidatePath("/my-booked-sessions");
 
     return {
@@ -221,7 +231,7 @@ export async function createBooking(formData) {
   }
 }
 
-// Get My Bookings (🔴 Private User Data - Never Cached)
+
 export async function getMyBookings() {
   const config = await getAuthConfig();
   try {
@@ -238,7 +248,7 @@ export async function deleteBooking(bookingId) {
   try {
     const response = await axios.delete(`${API_URL}/api/bookings/${bookingId}`, config);
 
-    // 🟢 Cache Invalidation
+
     revalidatePath("/my-booked-sessions");
 
     return response.data;
@@ -251,7 +261,7 @@ export async function deleteBooking(bookingId) {
   }
 }
 
-// Update Booking
+
 export async function updateBooking(bookingId, formData) {
   try {
     const config = await getAuthConfig();
@@ -272,7 +282,7 @@ export async function updateBooking(bookingId, formData) {
       config
     );
 
-    // 🟢 Cache Invalidation
+    
     revalidatePath("/my-booked-sessions");
 
     return {
@@ -292,7 +302,7 @@ export async function updateBooking(bookingId, formData) {
   }
 }
 
-// Get My Tutors (🔴 Private User Data - Never Cached)
+
 export async function getMyTutors(userId) {
   try {
     const config = await getAuthConfig();
@@ -309,14 +319,14 @@ export async function getMyTutors(userId) {
   }
 }
 
-// Delete Tutor
+
 export async function deleteTutorWithBookings(tutorId) {
   try {
     const config = await getAuthConfig();
 
     const response = await axios.delete(`${API_URL}/api/tutors/${tutorId}`, config);
 
-    // 🟢 Cache Invalidation: টিউটর মুছে গেলে সাথে সাথে ক্যাশ ক্লিয়ার হবে
+  
     revalidateTag("tutors-list");
     revalidateTag(`tutor-${tutorId}`);
     revalidatePath("/tutors");

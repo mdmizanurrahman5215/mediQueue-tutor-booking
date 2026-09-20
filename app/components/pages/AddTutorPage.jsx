@@ -1,43 +1,55 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
-import { 
-  ArrowLeft, User, Image as ImageIcon, BookOpen, Clock, 
-  Calendar, MapPin, GraduationCap, Award, DollarSign, 
-  Users, Globe, Code, Plus, Trash2, Loader2 
-} from 'lucide-react';
-import toast from 'react-hot-toast';
-import { createTutor, fetchTutorDetailsById, updateTutor } from '@/app/lib/actions'; // getTutorById & updateTutor আপনার server actions থেকে ইম্পোর্ট করুন
-import { authClient } from '@/app/lib/auth-client';
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import {
+  ArrowLeft,
+  User,
+  Image as ImageIcon,
+  BookOpen,
+  Clock,
+  Calendar,
+  MapPin,
+  GraduationCap,
+  Award,
+  DollarSign,
+  Users,
+  Globe,
+  Code,
+  Plus,
+  Trash2,
+  Loader2,
+} from "lucide-react";
+import toast from "react-hot-toast";
+import {
+  createTutor,
+  fetchTutorDetailsById,
+  updateTutor,
+} from "@/app/lib/actions";
+import { authClient } from "@/app/lib/auth-client";
 
 const initialFormState = {
-  tutorName: '',
-  subject: '',
-  image: '',
-  bio: '',
-  institution: '',
-  qualification: '',
-  experience: '1 Year',
-  location: '',
-  hourlyFee: '',
-  totalSlot: '',
-  teachingMode: 'Online',
-  sessionStartDate: '',
-  availableDays: '',
-  availableTimeSlot: '',
+  tutorName: "",
+  image: "",
+  bio: "",
+  institution: "",
+  qualification: "",
+  experience: "1 Year",
+  location: "",
+  hourlyFee: "",
+  totalSlot: "",
+  teachingMode: "Online",
+  sessionStartDate: "",
+  availableDays: "",
+  availableTimeSlot: "",
 };
 
 export default function AddTutorForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  console.log({searchParams});
-  
-  
-  // 1. URL থেকে editId বা id পারাম ধরা
-  const editId = searchParams.get('editId') || searchParams.get('id');
-   console.log({editId});
+
+  const editId = searchParams.get("editId") || searchParams.get("id");
 
   const [loading, setLoading] = useState(false);
   const [fetchingData, setFetchingData] = useState(false);
@@ -47,47 +59,54 @@ export default function AddTutorForm() {
   // Form Field State
   const [formData, setFormData] = useState(initialFormState);
 
-  // Array States for Skills & Languages
-  const [skills, setSkills] = useState([]);
-  const [skillInput, setSkillInput] = useState('');
-  
-  const [languages, setLanguages] = useState([]);
-  const [languageInput, setLanguageInput] = useState('');
+  const [subjects, setSubjects] = useState([]);
+  const [subjectInput, setSubjectInput] = useState("");
 
-  // 2. Edit ID থাকলে Database থেকে ডাটা এনে ফর্ম Fill করা
+  const [skills, setSkills] = useState([]);
+  const [skillInput, setSkillInput] = useState("");
+
+  const [languages, setLanguages] = useState([]);
+  const [languageInput, setLanguageInput] = useState("");
   useEffect(() => {
     if (!editId) return;
 
     const fetchTutorDetails = async () => {
       setFetchingData(true);
       try {
-        // যদি Server Action ব্যবহার করেন:
         const result = await fetchTutorDetailsById(editId);
-
-        // অথবা API Route ব্যবহার করলে: 
-        // const res = await fetch(`/api/tutors/${editId}`);
-        // const result = await res.json();
-
         const tutor = result?.data || result?.tutor || result;
 
         if (tutor) {
           setFormData({
-            tutorName: tutor.tutorName || '',
-            subject: tutor.subject || '',
-            image: tutor.image || '',
-            bio: tutor.bio || '',
-            institution: tutor.institution || '',
-            qualification: tutor.qualification || '',
-            experience: tutor.experience || '1 Year',
-            location: tutor.location || '',
-            hourlyFee: tutor.hourlyFee ? String(tutor.hourlyFee) : '',
-            totalSlot: tutor.totalSlot ? String(tutor.totalSlot) : '',
-            teachingMode: tutor.teachingMode || 'Online',
-            // Date format YYYY-MM-DD নিশ্চিত করা (HTML input type="date" এর জন্য)
-            sessionStartDate: tutor.sessionStartDate ? tutor.sessionStartDate.split('T')[0] : '',
-            availableDays: tutor.availableDays || '',
-            availableTimeSlot: tutor.availableTimeSlot || '',
+            tutorName: tutor.tutorName || "",
+            image: tutor.image || "",
+            bio: tutor.bio || "",
+            institution: tutor.institution || "",
+            qualification: tutor.qualification || "",
+            experience: tutor.experience || "1 Year",
+            location: tutor.location || "",
+            hourlyFee: tutor.hourlyFee ? String(tutor.hourlyFee) : "",
+            totalSlot: tutor.totalSlot ? String(tutor.totalSlot) : "",
+            teachingMode: tutor.teachingMode || "Online",
+            sessionStartDate: tutor.sessionStartDate
+              ? tutor.sessionStartDate.split("T")[0]
+              : "",
+            availableDays: tutor.availableDays || "",
+            availableTimeSlot: tutor.availableTimeSlot || "",
           });
+
+          let rawSubjects = tutor.subjects || tutor.subject || [];
+
+          if (Array.isArray(rawSubjects)) {
+            setSubjects(rawSubjects);
+          } else if (
+            typeof rawSubjects === "string" &&
+            rawSubjects.trim() !== ""
+          ) {
+            setSubjects(rawSubjects.split(",").map((s) => s.trim()));
+          } else {
+            setSubjects([]);
+          }
 
           setSkills(Array.isArray(tutor.skills) ? tutor.skills : []);
           setLanguages(Array.isArray(tutor.languages) ? tutor.languages : []);
@@ -103,18 +122,29 @@ export default function AddTutorForm() {
     fetchTutorDetails();
   }, [editId]);
 
-  // Handle Input Change
   const handleChange = (e) => {
     const { name, value } = e?.target || {};
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Skill Handlers
+  // Subject Handlers
+  const handleAddSubject = () => {
+    const trimmed = subjectInput?.trim();
+    if (trimmed && !subjects.includes(trimmed)) {
+      setSubjects((prev) => [...prev, trimmed]);
+      setSubjectInput("");
+    }
+  };
+
+  const handleRemoveSubject = (index) => {
+    setSubjects((prev) => prev.filter((_, idx) => idx !== index));
+  };
+
   const handleAddSkill = () => {
     const trimmed = skillInput?.trim();
     if (trimmed && !skills.includes(trimmed)) {
       setSkills((prev) => [...prev, trimmed]);
-      setSkillInput('');
+      setSkillInput("");
     }
   };
 
@@ -122,12 +152,11 @@ export default function AddTutorForm() {
     setSkills((prev) => prev.filter((_, idx) => idx !== index));
   };
 
-  // Language Handlers
   const handleAddLanguage = () => {
     const trimmed = languageInput?.trim();
     if (trimmed && !languages.includes(trimmed)) {
       setLanguages((prev) => [...prev, trimmed]);
-      setLanguageInput('');
+      setLanguageInput("");
     }
   };
 
@@ -135,13 +164,16 @@ export default function AddTutorForm() {
     setLanguages((prev) => prev.filter((_, idx) => idx !== index));
   };
 
-  // Handle Form Submission (Create or Update)
   const handleSubmit = async (e) => {
     e?.preventDefault();
 
     if (isPending) return;
 
-    // Authentication Check
+    if (subjects.length === 0) {
+      toast.error("Please add at least one subject.");
+      return;
+    }
+
     if (!user?.email && !user?.id) {
       toast.error("You must be logged in to save a tutor profile.");
       return;
@@ -154,14 +186,14 @@ export default function AddTutorForm() {
         ...formData,
         hourlyFee: Number(formData.hourlyFee) || 0,
         totalSlot: Number(formData.totalSlot) || 0,
+        subjects,
         skills,
         languages,
-        userId: user?.id || user?._id || "", 
+        userId: user?.id || user?._id || "",
         createdByEmail: user?.email || "",
         createdByName: user?.name || user?.displayName || "",
       };
 
-      // Edit Mode হলে UpdateAction, নইলে CreateAction
       let result;
       if (editId) {
         result = await updateTutor(editId, payload);
@@ -170,8 +202,13 @@ export default function AddTutorForm() {
       }
 
       if (result?.success) {
-        toast.success(result?.message ?? (editId ? "Profile updated successfully!" : "Profile created successfully!"));
-        
+        toast.success(
+          result?.message ??
+            (editId
+              ? "Profile updated successfully!"
+              : "Profile created successfully!"),
+        );
+
         setTimeout(() => {
           router?.push("/my-tutors");
         }, 500);
@@ -185,12 +222,13 @@ export default function AddTutorForm() {
     }
   };
 
-  // 3. Data Load হওয়ার সময় Spinner দেখানো
   if (fetchingData) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-950">
         <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-2" />
-        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Loading tutor profile for edit...</p>
+        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+          Loading tutor profile for edit...
+        </p>
       </div>
     );
   }
@@ -198,11 +236,9 @@ export default function AddTutorForm() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 py-10 transition-colors">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-        
-        {/* Navigation / Header */}
         <div className="flex items-center justify-between">
-          <Link 
-            href="/tutors" 
+          <Link
+            href="/tutors"
             className="inline-flex items-center space-x-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -210,29 +246,27 @@ export default function AddTutorForm() {
           </Link>
         </div>
 
-        {/* Dynamic Title */}
         <div className="space-y-1">
           <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white">
-            {editId ? 'Edit Tutor Profile' : 'Add New Tutor Profile'}
+            {editId ? "Edit Tutor Profile" : "Add New Tutor Profile"}
           </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            {editId 
-              ? 'Update the tutor information below and save your changes.' 
-              : 'Fill in the detailed information below to list a new qualified tutor on the platform.'}
+            {editId
+              ? "Update the tutor information below and save your changes."
+              : "Fill in the detailed information below to list a new qualified tutor on the platform."}
           </p>
         </div>
 
-        {/* Main Form */}
-        <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-900 rounded-3xl p-6 sm:p-8 border border-gray-100 dark:border-gray-800 shadow-sm space-y-8">
-          
-          {/* Section 1: Basic Information */}
+        <form
+          onSubmit={handleSubmit}
+          className="bg-white dark:bg-gray-900 rounded-3xl p-6 sm:p-8 border border-gray-100 dark:border-gray-800 shadow-sm space-y-8"
+        >
           <div className="space-y-4">
             <h2 className="text-lg font-bold text-gray-900 dark:text-white border-b border-gray-100 dark:border-gray-800 pb-2">
               1. Basic Information
             </h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Tutor Name */}
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
                   <User className="w-3.5 h-3.5 text-blue-600" /> Tutor Name *
@@ -248,26 +282,10 @@ export default function AddTutorForm() {
                 />
               </div>
 
-              {/* Subject */}
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
-                  <BookOpen className="w-3.5 h-3.5 text-blue-600" /> Subject *
-                </label>
-                <input
-                  type="text"
-                  name="subject"
-                  required
-                  value={formData?.subject}
-                  onChange={handleChange}
-                  placeholder="e.g. Mathematics & Physics"
-                  className="w-full px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              {/* Profile Image URL */}
-              <div className="sm:col-span-2 space-y-1.5">
-                <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
-                  <ImageIcon className="w-3.5 h-3.5 text-blue-600" /> Image URL *
+                  <ImageIcon className="w-3.5 h-3.5 text-blue-600" /> Image URL
+                  *
                 </label>
                 <input
                   type="url"
@@ -278,6 +296,59 @@ export default function AddTutorForm() {
                   placeholder="https://images.unsplash.com/photo-..."
                   className="w-full px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
+              </div>
+
+              {/* Multiple Subjects Tag Input */}
+              {/* Subjects Input Section */}
+              <div className="w-full max-w-xl mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Subjects
+                </label>
+
+                {/* Input Box & Add Button */}
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={subjectInput}
+                    onChange={(e) => setSubjectInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleAddSubject();
+                      }
+                    }}
+                    placeholder="e.g. Mathematics"
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddSubject}
+                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium whitespace-nowrap"
+                  >
+                    Add Subject
+                  </button>
+                </div>
+
+                {/* Tags list below input box */}
+                {subjects.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-3 p-2 bg-gray-50 border border-gray-100 rounded-lg">
+                    {subjects.map((subj, index) => (
+                      <span
+                        key={index}
+                        className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-50 text-indigo-700 rounded-full text-xs font-medium border border-indigo-100"
+                      >
+                        {subj}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveSubject(index)}
+                          className="hover:text-indigo-900 focus:outline-none font-bold"
+                        >
+                          &times;
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* About / Bio */}
@@ -298,7 +369,7 @@ export default function AddTutorForm() {
             </div>
           </div>
 
-          {/* Section 2: Education & Experience */}
+          {/* Section 2: Qualification & Background */}
           <div className="space-y-4">
             <h2 className="text-lg font-bold text-gray-900 dark:text-white border-b border-gray-100 dark:border-gray-800 pb-2">
               2. Qualification & Background
@@ -308,7 +379,8 @@ export default function AddTutorForm() {
               {/* Institution */}
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
-                  <GraduationCap className="w-3.5 h-3.5 text-blue-600" /> Institution *
+                  <GraduationCap className="w-3.5 h-3.5 text-blue-600" />{" "}
+                  Institution *
                 </label>
                 <input
                   type="text"
@@ -340,7 +412,8 @@ export default function AddTutorForm() {
               {/* Experience */}
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
-                  <Award className="w-3.5 h-3.5 text-blue-600" /> Teaching Experience *
+                  <Award className="w-3.5 h-3.5 text-blue-600" /> Teaching
+                  Experience *
                 </label>
                 <select
                   name="experience"
@@ -374,7 +447,7 @@ export default function AddTutorForm() {
             </div>
           </div>
 
-          {/* Section 3: Pricing, Slots & Schedule */}
+          {/* Section 3: Pricing & Schedule Details */}
           <div className="space-y-4">
             <h2 className="text-lg font-bold text-gray-900 dark:text-white border-b border-gray-100 dark:border-gray-800 pb-2">
               3. Pricing & Schedule Details
@@ -384,7 +457,8 @@ export default function AddTutorForm() {
               {/* Hourly Fee */}
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
-                  <DollarSign className="w-3.5 h-3.5 text-blue-600" /> Hourly Fee (BDT) *
+                  <DollarSign className="w-3.5 h-3.5 text-blue-600" /> Hourly
+                  Fee (BDT) *
                 </label>
                 <input
                   type="number"
@@ -401,7 +475,8 @@ export default function AddTutorForm() {
               {/* Total Slots */}
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
-                  <Users className="w-3.5 h-3.5 text-blue-600" /> Available Total Slots *
+                  <Users className="w-3.5 h-3.5 text-blue-600" /> Available
+                  Total Slots *
                 </label>
                 <input
                   type="number"
@@ -417,7 +492,9 @@ export default function AddTutorForm() {
 
               {/* Teaching Mode */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Teaching Mode *</label>
+                <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                  Teaching Mode *
+                </label>
                 <select
                   name="teachingMode"
                   value={formData?.teachingMode}
@@ -433,7 +510,8 @@ export default function AddTutorForm() {
               {/* Session Start Date */}
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
-                  <Calendar className="w-3.5 h-3.5 text-blue-600" /> Session Starts On *
+                  <Calendar className="w-3.5 h-3.5 text-blue-600" /> Session
+                  Starts On *
                 </label>
                 <input
                   type="date"
@@ -447,7 +525,9 @@ export default function AddTutorForm() {
 
               {/* Available Days */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">Available Days *</label>
+                <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                  Available Days *
+                </label>
                 <input
                   type="text"
                   name="availableDays"
@@ -484,11 +564,11 @@ export default function AddTutorForm() {
             </h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              
               {/* Skills Tag Input */}
               <div className="space-y-2">
                 <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
-                  <Code className="w-3.5 h-3.5 text-blue-600" /> Core Skills / Topics
+                  <Code className="w-3.5 h-3.5 text-blue-600" /> Core Skills /
+                  Topics
                 </label>
                 <div className="flex gap-2">
                   <input
@@ -496,7 +576,7 @@ export default function AddTutorForm() {
                     value={skillInput}
                     onChange={(e) => setSkillInput(e?.target?.value)}
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
+                      if (e.key === "Enter") {
                         e.preventDefault();
                         handleAddSkill();
                       }
@@ -512,13 +592,20 @@ export default function AddTutorForm() {
                     <Plus className="w-4 h-4" />
                   </button>
                 </div>
-                
+
                 {/* Render Skill Tags */}
                 <div className="flex flex-wrap gap-1.5 pt-2">
                   {skills?.map((skill, idx) => (
-                    <span key={idx} className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 dark:bg-gray-800 text-blue-700 dark:text-blue-400 rounded-full text-xs font-semibold">
+                    <span
+                      key={idx}
+                      className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 dark:bg-gray-800 text-blue-700 dark:text-blue-400 rounded-full text-xs font-semibold"
+                    >
                       {skill}
-                      <button type="button" onClick={() => handleRemoveSkill(idx)} className="hover:text-red-500 transition-colors">
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveSkill(idx)}
+                        className="hover:text-red-500 transition-colors"
+                      >
                         <Trash2 className="w-3 h-3" />
                       </button>
                     </span>
@@ -537,7 +624,7 @@ export default function AddTutorForm() {
                     value={languageInput}
                     onChange={(e) => setLanguageInput(e?.target?.value)}
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
+                      if (e.key === "Enter") {
                         e.preventDefault();
                         handleAddLanguage();
                       }
@@ -557,16 +644,22 @@ export default function AddTutorForm() {
                 {/* Render Language Tags */}
                 <div className="flex flex-wrap gap-1.5 pt-2">
                   {languages?.map((lang, idx) => (
-                    <span key={idx} className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full text-xs font-semibold">
+                    <span
+                      key={idx}
+                      className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full text-xs font-semibold"
+                    >
                       {lang}
-                      <button type="button" onClick={() => handleRemoveLanguage(idx)} className="hover:text-red-500 transition-colors">
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveLanguage(idx)}
+                        className="hover:text-red-500 transition-colors"
+                      >
                         <Trash2 className="w-3 h-3" />
                       </button>
                     </span>
                   ))}
                 </div>
               </div>
-
             </div>
           </div>
 
@@ -580,16 +673,18 @@ export default function AddTutorForm() {
               {loading ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  <span>{editId ? 'Updating Profile...' : 'Saving Tutor Profile...'}</span>
+                  <span>
+                    {editId ? "Updating Profile..." : "Saving Tutor Profile..."}
+                  </span>
                 </>
               ) : (
-                <span>{editId ? 'Update Tutor Profile' : 'Publish Tutor Profile'}</span>
+                <span>
+                  {editId ? "Update Tutor Profile" : "Publish Tutor Profile"}
+                </span>
               )}
             </button>
           </div>
-
         </form>
-
       </div>
     </div>
   );

@@ -1,107 +1,133 @@
-"use client";
+import React from "react";
+import Link from "next/link";
+import { getTutors } from "@/app/lib/data";
+import TutorFilters from "@/app/components/card/TutorFilter";
 
-import { useState } from "react";
-import { AnimatePresence } from "framer-motion";
-import { CheckCircle2 } from "lucide-react";
+export default async function TutorHomePage({ searchParams }) {
+  const params = searchParams ? await searchParams : {};
+  console.log("Resolved searchParams:", params);
 
+  const page = Number(params?.page) || 1;
+  const search = params?.search || "";
+  const subject = params?.subject || "";
+  const fromDate = params?.fromDate || "";
+  const toDate = params?.toDate || "";
+  const limit = 6;
 
-
-import TutorFilter from "@/app/components/card/TutorFilter";
-import TutorEmptyState from "@/app/components/card/TutorEmptyState";
-import TutorCard from "@/app/components/card/TutorCard";
-import TutorHero from "@/app/components/card/TutorHero";
-
-
-export default function TutorsPage({ tutors = [] }) {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-
-  // Filter Logic
-  const filteredTutors = tutors.filter((tutor) => {
-    const matchesName = tutor?.tutorName
-      ?.toLowerCase()
-      .includes(searchQuery.toLowerCase());
-
-    const sessionStart = tutor?.sessionStartDate
-      ? new Date(tutor.sessionStartDate)
-      : null;
-
-    const startFilter = startDate ? new Date(startDate) : null;
-    const endFilter = endDate ? new Date(endDate) : null;
-
-    let matchesDate = true;
-
-    if (sessionStart && !Number.isNaN(sessionStart.getTime())) {
-      if (startFilter && !Number.isNaN(startFilter.getTime())) {
-        matchesDate = matchesDate && sessionStart >= startFilter;
-      }
-      if (endFilter && !Number.isNaN(endFilter.getTime())) {
-        matchesDate = matchesDate && sessionStart <= endFilter;
-      }
-    }
-
-    return matchesName && matchesDate;
+  const data = await getTutors({
+    page,
+    limit,
+    search,
+    subject,
+    fromDate,
+    toDate,
   });
 
+  const tutors = data?.tutors || [];
+  const availableSubjects = data?.availableSubjects || [];
+  const totalPages = data?.totalPages || 0;
+  const currentPage = data?.currentPage || 1;
+  const totalCount = data?.totalCount || 0;
+
+  const createPageUrl = (pageNum) => {
+    const query = new URLSearchParams();
+    query.set("page", String(pageNum));
+    if (search) query.set("search", search);
+    if (subject) query.set("subject", subject);
+    if (fromDate) query.set("fromDate", fromDate);
+    if (toDate) query.set("toDate", toDate);
+    return `/tutors?${query.toString()}`;
+  };
+
   return (
-    <main className="relative min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 overflow-hidden transition-colors duration-300">
-      {/* Background Orbs */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 left-1/4 w-[500px] h-[500px] rounded-full bg-blue-500/10 dark:bg-blue-500/10 blur-[120px]" />
-        <div className="absolute top-1/2 -right-40 w-[450px] h-[450px] rounded-full bg-indigo-500/10 blur-[120px]" />
-        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full bg-purple-500/5 blur-[120px]" />
+    <div className="max-w-7xl mx-auto px-4 py-12 space-y-8">
+      <div>
+        <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white">
+          Browse Tutors
+        </h1>
+        <p className="text-sm text-gray-500 mt-1">
+          Found {totalCount} matching tutors available for booking
+        </p>
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* 1. Hero Section */}
-        <TutorHero totalTutors={tutors.length} />
+      <TutorFilters subjects={availableSubjects} />
 
-        {/* 2. Filter Inputs */}
-        <TutorFilter
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          startDate={startDate}
-          setStartDate={setStartDate}
-          endDate={endDate}
-          setEndDate={setEndDate}
-        />
-
-        {/* Results Info */}
-        <div className="flex items-center justify-between mb-5">
-          <div>
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-              Available Tutors
-            </h2>
-            <p className="text-xs text-slate-400 mt-1">
-              {filteredTutors.length} tutor
-              {filteredTutors.length !== 1 ? "s" : ""} found
-            </p>
-          </div>
-
-          <div className="hidden sm:flex items-center gap-2 text-xs font-medium text-slate-400">
-            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-            Verified profiles
-          </div>
+      {tutors.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {tutors.map((tutor) => (
+            <div
+              key={tutor._id || tutor.id}
+              className="p-6 rounded-3xl border border-gray-200/80 dark:border-white/10 bg-white dark:bg-gray-950 shadow-sm space-y-3"
+            >
+              <div className="flex justify-between items-start">
+                <h3 className="font-bold text-lg text-gray-900 dark:text-white">
+                  {tutor.tutorName}
+                </h3>
+                <span className="text-xs px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 font-semibold">
+                  ${tutor.hourlyFee}/hr
+                </span>
+              </div>
+              <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">
+                {tutor.subject}
+              </p>
+              <p className="text-xs text-gray-500">{tutor.institution}</p>
+              {tutor.sessionStartDate && (
+                <p className="text-xs text-emerald-600 dark:text-emerald-400">
+                  Session Start:{" "}
+                  {new Date(tutor.sessionStartDate).toLocaleDateString()}
+                </p>
+              )}
+            </div>
+          ))}
         </div>
+      ) : (
+        <div className="text-center py-16 text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-950 rounded-3xl border border-gray-100 dark:border-white/5">
+          No tutors found matching your search and date range criteria.
+        </div>
+      )}
 
-        {/* 3. Empty State OR Tutor Cards Grid */}
-        {!filteredTutors || filteredTutors.length === 0 ? (
-          <TutorEmptyState />
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            <AnimatePresence>
-              {filteredTutors.map((tutor, index) => (
-                <TutorCard
-                  key={tutor._id || tutor.id}
-                  tutor={tutor}
-                  index={index}
-                />
-              ))}
-            </AnimatePresence>
-          </div>
-        )}
-      </div>
-    </main>
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-2 pt-8">
+          <Link
+            href={createPageUrl(currentPage - 1)}
+            className={`px-4 py-2 text-sm rounded-xl border transition-all ${
+              currentPage <= 1
+                ? "pointer-events-none opacity-40 border-gray-200"
+                : "border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800"
+            }`}
+          >
+            Previous
+          </Link>
+
+          {[...Array(totalPages)].map((_, i) => {
+            const pageNum = i + 1;
+            return (
+              <Link
+                key={pageNum}
+                href={createPageUrl(pageNum)}
+                className={`px-4 py-2 text-sm rounded-xl border transition-all ${
+                  currentPage === pageNum
+                    ? "bg-blue-600 text-white border-blue-600 font-bold"
+                    : "border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800"
+                }`}
+              >
+                {pageNum}
+              </Link>
+            );
+          })}
+
+          <Link
+            href={createPageUrl(currentPage + 1)}
+            className={`px-4 py-2 text-sm rounded-xl border transition-all ${
+              currentPage >= totalPages
+                ? "pointer-events-none opacity-40 border-gray-200"
+                : "border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800"
+            }`}
+          >
+            Next
+          </Link>
+        </div>
+      )}
+    </div>
   );
 }
