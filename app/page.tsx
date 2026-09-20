@@ -5,7 +5,12 @@ import SubjectCategories from "@/app/components/pages/SubjectCategories";
 import Testimonials from "@/app/components/pages/Testimonials";
 import WhyChooseUs from "@/app/components/pages/WhyChooseUs";
 
-export default async function Home({ searchParams }) {
+// Props er Type define kora holo
+interface PageProps {
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }> | { [key: string]: string | string[] | undefined };
+}
+
+export default async function Home({ searchParams }: PageProps) {
   const resolvedParams = (await searchParams) || {};
 
   return (
