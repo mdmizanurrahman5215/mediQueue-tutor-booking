@@ -2,18 +2,22 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, Mail, Lock, ArrowRight, Sparkles, Camera, CheckCircle2, AlertCircle } from 'lucide-react';
+import { User, Mail, Lock, ArrowRight, Sparkles, Camera, CheckCircle2, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { FaGithub, FaGoogle } from 'react-icons/fa';
 import toast, { Toaster } from 'react-hot-toast';
 import { authClient } from '@/app/lib/auth-client';
 import { useRouter } from 'next/navigation';
 
 export default function RegisterForm() {
-    const router = useRouter();
+  const router = useRouter();
   const [authMethod, setAuthMethod] = useState('social');
   const [imagePreview, setImagePreview] = useState(null);
   const [passwordError, setPasswordError] = useState('');
   const [loading, setLoading] = useState(false);
+  
+  // State for toggling password visibility
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
   // Declared formData state
   const [formData, setFormData] = useState({
@@ -28,6 +32,23 @@ export default function RegisterForm() {
     router.push('/login');
   };
 
+  // Password validation helper function
+  const validatePassword = (password) => {
+    if (password.length < 6) {
+      return 'Password must be at least 6 characters long.';
+    }
+    if (!/[A-Z]/.test(password)) {
+      return 'Password must contain at least one uppercase letter.';
+    }
+    if (!/[a-z]/.test(password)) {
+      return 'Password must contain at least one lowercase letter.';
+    }
+    if (!/[!@#$%^&*(),.?":{}|<>]/?.test(password)) {
+      return 'Password must contain at least one special character.';
+    }
+    return '';
+  };
+
   const handleChange = (e) => {
     const name = e?.target?.name;
     const value = e?.target?.value;
@@ -37,8 +58,22 @@ export default function RegisterForm() {
     setFormData((prev) => {
       const updated = { ...prev, [name]: value };
 
-      if (name === 'confirmPassword' || name === 'password') {
-        if (updated?.confirmPassword && updated?.password !== updated?.confirmPassword) {
+      if (name === 'password') {
+        const valError = validatePassword(updated?.password);
+        if (valError) {
+          setPasswordError(valError);
+        } else if (updated?.confirmPassword && updated?.password !== updated?.confirmPassword) {
+          setPasswordError('Passwords do not match!');
+        } else {
+          setPasswordError('');
+        }
+      }
+
+      if (name === 'confirmPassword') {
+        const valError = validatePassword(updated?.password);
+        if (valError) {
+          setPasswordError(valError);
+        } else if (updated?.confirmPassword && updated?.password !== updated?.confirmPassword) {
           setPasswordError('Passwords do not match!');
         } else {
           setPasswordError('');
@@ -57,10 +92,23 @@ export default function RegisterForm() {
       toast.success('Image selected successfully!');
     }
   };
+  const convertToBase64 = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = (error) => reject(error);
+  });
+};
 
-  const handleSubmit = async (e) => {
+const handleSubmit = async (e) => {
     e?.preventDefault();
-
+    const passwordCriteriaError = validatePassword(formData?.password);
+    if (passwordCriteriaError) {
+      setPasswordError(passwordCriteriaError);
+      toast.error(passwordCriteriaError);
+      return;
+    }
     if (formData?.password !== formData?.confirmPassword) {
       setPasswordError('Passwords do not match!');
       toast.error('Passwords do not match!');
@@ -71,11 +119,17 @@ export default function RegisterForm() {
     setLoading(true);
 
     try {
+      // Image ফাইল থাকলে Base64 এ কনভার্ট করুন
+      let imageUrl = undefined;
+      if (formData?.image) {
+        imageUrl = await convertToBase64(formData.image);
+      }
+
       const { data, error } = await authClient?.signUp?.email({
         email: formData?.email,
         password: formData?.password,
         name: formData?.name,
-        image: formData?.image ? URL.createObjectURL(formData?.image) : undefined,
+        image: imageUrl, // URL.createObjectURL এর বদলে Base64 string বা স্থায়ী URL
         callbackURL: '/signin',
       });
 
@@ -86,11 +140,21 @@ export default function RegisterForm() {
 
       toast.success('Account created successfully!', { id: toastId });
       console.log('User registered successfully:', data);
+
+      router.push('/login'); 
+
     } catch (err) {
       toast.error('Something went wrong. Please try again.', { id: toastId });
       console.error(err);
     } finally {
       setLoading(false);
+      setFormData({
+        name: "",
+        email: "",
+        password: "",
+        confirmPassword: "",
+        image: null,
+      });
     }
   };
 
@@ -233,7 +297,7 @@ export default function RegisterForm() {
                       required
                       value={formData?.name || ''}
                       onChange={handleChange}
-                      placeholder="John Doe"
+                      placeholder="Enter Your Name"
                       className="w-full pl-10 pr-4 py-2 bg-slate-900/60 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:border-fuchsia-500 focus:ring-1 focus:ring-fuchsia-500 transition-all"
                     />
                   </div>
@@ -252,7 +316,7 @@ export default function RegisterForm() {
                       required
                       value={formData?.email || ''}
                       onChange={handleChange}
-                      placeholder="name@example.com"
+                      placeholder="Enter Your Email"
                       className="w-full pl-10 pr-4 py-2 bg-slate-900/60 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:border-fuchsia-500 focus:ring-1 focus:ring-fuchsia-500 transition-all"
                     />
                   </div>
@@ -266,14 +330,25 @@ export default function RegisterForm() {
                   <div className="relative">
                     <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                     <input
-                      type="password"
+                      type={showPassword ? 'text' : 'password'}
                       name="password"
                       required
                       value={formData?.password || ''}
                       onChange={handleChange}
                       placeholder="••••••••"
-                      className="w-full pl-10 pr-4 py-2 bg-slate-900/60 border border-slate-800 rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:border-fuchsia-500 focus:ring-1 focus:ring-fuchsia-500 transition-all"
+                      className={`w-full pl-10 pr-10 py-2 bg-slate-900/60 border rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none transition-all ${
+                        passwordError
+                          ? 'border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500'
+                          : 'border-slate-800 focus:border-fuchsia-500 focus:ring-1 focus:ring-fuchsia-500'
+                      }`}
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 focus:outline-none"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
                   </div>
                 </div>
 
@@ -287,27 +362,36 @@ export default function RegisterForm() {
                       <span className="text-[10px] text-red-400 flex items-center gap-1 font-medium">
                         <AlertCircle className="w-3 h-3" /> {passwordError}
                       </span>
-                    ) : formData?.confirmPassword && (
-                      <span className="text-[10px] text-emerald-400 flex items-center gap-1 font-medium">
-                        <CheckCircle2 className="w-3 h-3" /> Matched
-                      </span>
+                    ) : (
+                      formData?.confirmPassword && (
+                        <span className="text-[10px] text-emerald-400 flex items-center gap-1 font-medium">
+                          <CheckCircle2 className="w-3 h-3" /> Matched
+                        </span>
+                      )
                     )}
                   </div>
                   <div className="relative">
                     <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                     <input
-                      type="password"
+                      type={showConfirmPassword ? 'text' : 'password'}
                       name="confirmPassword"
                       required
                       value={formData?.confirmPassword || ''}
                       onChange={handleChange}
                       placeholder="••••••••"
-                      className={`w-full pl-10 pr-4 py-2 bg-slate-900/60 border rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none transition-all ${
+                      className={`w-full pl-10 pr-10 py-2 bg-slate-900/60 border rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none transition-all ${
                         passwordError
                           ? 'border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500'
                           : 'border-slate-800 focus:border-fuchsia-500 focus:ring-1 focus:ring-fuchsia-500'
                       }`}
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 focus:outline-none"
+                    >
+                      {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
                   </div>
                 </div>
 
