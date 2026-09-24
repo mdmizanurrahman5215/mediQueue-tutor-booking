@@ -24,6 +24,7 @@ export default function TutorDetailsPage({ id }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+    console.log({tutorData});
 
   const loadTutorDetails = async () => {
     try {
@@ -62,6 +63,12 @@ export default function TutorDetailsPage({ id }) {
   const isBeforeSessionDate = sessionStartDate && today < sessionStartDate;
   const isFullyBooked = tutorData?.totalSlot <= 0;
 
+  let daysRemaining = 0;
+if (isBeforeSessionDate) {
+  const diffInMilliseconds = sessionStartDate - today;
+  daysRemaining = Math.ceil(diffInMilliseconds / (1000 * 60 * 60 * 24));
+}
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
@@ -87,6 +94,9 @@ export default function TutorDetailsPage({ id }) {
       </div>
     );
   }
+
+
+  
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 py-10 transition-colors">
@@ -215,66 +225,79 @@ export default function TutorDetailsPage({ id }) {
 
           {/* Right Action Sidebar */}
           <div className="space-y-6">
-            <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 border border-gray-100 dark:border-gray-800 shadow-sm space-y-6 sticky top-6">
+  <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 border border-gray-100 dark:border-gray-800 shadow-sm space-y-6 sticky top-6">
 
-              <div className="space-y-1 text-center sm:text-left">
-                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">
-                  Tuition Fee
-                </span>
-                <div className="flex items-baseline justify-center sm:justify-start space-x-1">
-                  <span className="text-3xl font-extrabold text-gray-900 dark:text-white">
-                    ৳{tutorData.hourlyFee}
-                  </span>
-                  <span className="text-sm text-gray-500 dark:text-gray-400">/ hour</span>
-                </div>
-              </div>
+    <div className="space-y-1 text-center sm:text-left">
+      <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+        Tuition Fee
+      </span>
+      <div className="flex items-baseline justify-center sm:justify-start space-x-1">
+        <span className="text-3xl font-extrabold text-gray-900 dark:text-white">
+          ৳{tutorData.hourlyFee}
+        </span>
+        <span className="text-sm text-gray-500 dark:text-gray-400">/ hour</span>
+      </div>
+    </div>
 
-              <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800 space-y-3">
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-gray-600 dark:text-gray-400">Available Slots</span>
-                  <span
-                    className={`font-bold px-2.5 py-0.5 rounded-full text-xs ${
-                      tutorData.totalSlot > 0
-                        ? "bg-green-100 text-green-700 dark:bg-green-950/60 dark:text-green-400"
-                        : "bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-400"
-                    }`}
-                  >
-                    {tutorData.totalSlot > 0 ? `${tutorData.totalSlot} Slots Left` : "Fully Booked"}
-                  </span>
-                </div>
+    <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800 space-y-3">
+      <div className="flex justify-between items-center text-sm">
+        <span className="text-gray-600 dark:text-gray-400">Available Slots</span>
+        <span
+          className={`font-bold px-2.5 py-0.5 rounded-full text-xs ${
+            tutorData.totalSlot > 0
+              ? "bg-green-100 text-green-700 dark:bg-green-950/60 dark:text-green-400"
+              : "bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-400"
+          }`}
+        >
+          {tutorData.totalSlot > 0 ? `${tutorData.totalSlot} Slots Left` : "Fully Booked"}
+        </span>
+      </div>
 
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-gray-600 dark:text-gray-400">Mode</span>
-                  <span className="font-semibold text-gray-900 dark:text-white">
-                    {tutorData.teachingMode}
-                  </span>
-                </div>
-              </div>
+      <div className="flex justify-between items-center text-sm">
+        <span className="text-gray-600 dark:text-gray-400">Mode</span>
+        <span className="font-semibold text-gray-900 dark:text-white">
+          {tutorData.teachingMode}
+        </span>
+      </div>
+    </div>
 
-              {/* Action Button */}
-              <button
-                onClick={() => setIsModalOpen(true)}
-                disabled={isFullyBooked || isBeforeSessionDate}
-                className={`w-full py-3.5 px-4 rounded-xl font-bold text-sm transition-all shadow-sm ${
-                  isFullyBooked || isBeforeSessionDate
-                    ? "bg-gray-200 dark:bg-gray-800 text-gray-400 cursor-not-allowed"
-                    : "bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/20 active:scale-95"
-                }`}
-              >
-                {isFullyBooked
-                  ? "Fully Booked"
-                  : isBeforeSessionDate
-                  ? "Booking Not Available Yet"
-                  : "Book Session Now"}
-              </button>
+    {/* ⏳ Session Countdown Notice */}
+    {isBeforeSessionDate && (
+      <div className="p-3.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 rounded-xl text-center space-y-1">
+        <p className="text-xs font-bold text-amber-800 dark:text-amber-400 flex items-center justify-center gap-1.5">
+          <span>⏳</span>
+          <span>
+            Session starts in {daysRemaining} {daysRemaining === 1 ? "day" : "days"}!
+          </span>
+        </p>
 
-              <div className="flex items-center justify-center space-x-2 text-xs text-gray-500 dark:text-gray-400 pt-2">
-                <ShieldCheck className="w-4 h-4 text-blue-600" />
-                <span>Conflict-free Booking Guarantee</span>
-              </div>
+      </div>
+    )}
 
-            </div>
-          </div>
+    {/* Action Button */}
+    <button
+      onClick={() => setIsModalOpen(true)}
+      disabled={isFullyBooked || isBeforeSessionDate}
+      className={`w-full py-3.5 px-4 rounded-xl font-bold text-sm transition-all shadow-sm ${
+        isFullyBooked || isBeforeSessionDate
+          ? "bg-gray-200 dark:bg-gray-800 text-gray-400 cursor-not-allowed"
+          : "bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/20 active:scale-95"
+      }`}
+    >
+      {isFullyBooked
+        ? "Fully Booked"
+        : isBeforeSessionDate
+        ? "Booking Not Available Yet"
+        : "Book Session Now"}
+    </button>
+
+    <div className="flex items-center justify-center space-x-2 text-xs text-gray-500 dark:text-gray-400 pt-2">
+      <ShieldCheck className="w-4 h-4 text-blue-600" />
+      <span>Conflict-free Booking Guarantee</span>
+    </div>
+
+  </div>
+</div>
 
         </div>
       </div>
