@@ -1,14 +1,34 @@
-
 import React from "react";
 import Link from "next/link";
 import { getTutors } from "@/app/lib/data";
 import TutorFilters from "@/app/components/card/TutorFilter";
 import TutorCard from "@/app/components/card/TutorCard";
 
+// Dynamic Metadata Title Generation
+export async function generateMetadata({ searchParams }) {
+  const params = await searchParams;
+  const search = params?.search || "";
+  const subject = params?.subject || "";
+
+  let title = "Browse & Find Tutors | TutorApp";
+
+  if (subject && search) {
+    title = `${subject} Tutors matching "${search}" | TutorApp`;
+  } else if (subject) {
+    title = `Best ${subject} Tutors | TutorApp`;
+  } else if (search) {
+    title = `Tutors matching "${search}" | TutorApp`;
+  }
+
+  return {
+    title,
+    description: "Search and book sessions with verified expert tutors.",
+  };
+}
+
 export default async function TutorHomePage({ searchParams }) {
   const params = await searchParams;
-  console.log({params});
-  
+  console.log({ params });
 
   const page = Number(params?.page) || 1;
   const search = params?.search || "";
@@ -27,7 +47,6 @@ export default async function TutorHomePage({ searchParams }) {
       toDate,
     });
 
-
   const createPageUrl = (pageNum) => {
     const query = new URLSearchParams();
     query.set("page", String(pageNum));
@@ -40,7 +59,6 @@ export default async function TutorHomePage({ searchParams }) {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-12 space-y-8">
-
       <div>
         <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white">
           Browse Tutors
@@ -50,19 +68,13 @@ export default async function TutorHomePage({ searchParams }) {
         </p>
       </div>
 
-     
       <TutorFilters subjects={availableSubjects} />
 
- 
       {tutors.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {tutors.map((tutor,index) => (
-            <div
-              key={tutor._id}
-           
-            >
-              <TutorCard tutor={tutor} index={index}/>
-            
+          {tutors.map((tutor, index) => (
+            <div key={tutor._id}>
+              <TutorCard tutor={tutor} index={index} />
             </div>
           ))}
         </div>
@@ -72,7 +84,6 @@ export default async function TutorHomePage({ searchParams }) {
         </div>
       )}
 
- 
       {totalPages > 1 && (
         <div className="flex justify-center items-center gap-2 pt-8">
           <Link
