@@ -1,36 +1,51 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 📚 MediQueue – Tutor Booking System
 
-## Getting Started
+[![Live Site](https://img.shields.io/badge/Live%20Demo-MediQueue-blue?style=for-the-badge&logo=vercel)](https://your-live-site-url.vercel.app)
+[![Client Repo](https://img.shields.io/badge/GitHub-Client%20Repository-black?style=for-the-badge&logo=github)](https://github.com/your-username/mediqueue-client)
+[![Server Repo](https://img.shields.io/badge/GitHub-Server%20Repository-green?style=for-the-badge&logo=github)](https://github.com/your-username/mediqueue-server)
 
-First, run the development server:
+MediQueue is a modern, full-stack web application designed to simplify online tutor discovery and session management. Students can seamlessly browse verified tutors, search by subject or date range, and book real-time learning sessions. Tutors can manage their availability, schedules, and active listings through an intuitive dashboard.
+
+---
+
+## 🌟 Key Features
+
+- **🔐 Secure JWT & Google Authentication:** Full authentication flow supporting Email/Password with strength validation (uppercase, lowercase, 6+ characters) and 1-click Google OAuth login paired with JWT token management on private routes.
+- **⚡ Real-Time Booking & Automated Slot Management:** Interactive session booking with validation against session launch dates and dynamic total slot updates ($limit aggregation and atomic slot decrements).
+- **🔍 Smart Search & Date Filtering:** Search tutors by name using case-insensitive MongoDB `$regex` pattern matching and filter listings by availability windows via `$gte` and `$lte` operators.
+- **🌓 Light / Dark Theme Toggle:** Persistent theme switching available across the entire site for an optimized visual experience in any environment.
+- **📊 Comprehensive User Dashboard:** Private management portals ("My Tutors" & "My Booked Sessions") providing full CRUD capabilities with confirmation modals, real-time table state updates, and status toggles.
+- **🎯 Dynamic Routing & Custom UX:** Route-based dynamic document titles, smooth toast notifications, custom loading state spinners, and a dedicated 404 page.
+
+---
+
+## 🛠️ Tech Stack & Dependencies
+
+### **Client Side**
+- **Framework:** React.js / Vite
+- **Styling & Components:** Tailwind CSS, DaisyUI / Flowbite / Tailwind components
+- **Routing:** React Router DOM (v6)
+- **Icons & Animations:** Lucide React / React Icons, Framer Motion
+- **Form Helpers & Utilities:** React Datepicker, SweetAlert2 / React Hot Toast, Axios
+
+### **Server Side**
+- **Runtime Environment:** Node.js
+- **Framework:** Express.js
+- **Database:** MongoDB Native Driver
+- **Authentication:** JSON Web Tokens (`jsonwebtoken`), Firebase Admin / OAuth integrations
+- **Environment Management:** `dotenv`, `cors`
+
+---
+
+## 🚀 Getting Started Locally
+
+Follow these steps to set up and run MediQueue locally on your machine.
+
+### **1. Clone the Repositories**
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+# Clone the client-side repository
+git clone [https://github.com/your-username/mediqueue-client.git](https://github.com/your-username/mediqueue-client.git)
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+# Clone the server-side repository
+git clone [https://github.com/your-username/mediqueue-server.git](https://github.com/your-username/mediqueue-server.git)
