@@ -1,8 +1,8 @@
 # 📚 MediQueue – Tutor Booking System
 
-[![Live Site](https://img.shields.io/badge/Live%20Demo-MediQueue-blue?style=for-the-badge&logo=vercel)](https://your-live-site-url.vercel.app)
-[![Client Repo](https://img.shields.io/badge/GitHub-Client%20Repository-black?style=for-the-badge&logo=github)](https://github.com/your-username/mediqueue-client)
-[![Server Repo](https://img.shields.io/badge/GitHub-Server%20Repository-green?style=for-the-badge&logo=github)](https://github.com/your-username/mediqueue-server)
+[![Live Site](https://img.shields.io/badge/Live%20Demo-MediQueue-blue?style=for-the-badge&logo=vercel)](https://medi-queue-tutor-booking-mu.vercel.app)
+[![Client Repo](https://img.shields.io/badge/GitHub-Client%20Repository-black?style=for-the-badge&logo=github)](https://github.com/mdmizanurrahman5215/mediQueue-tutor-booking.git)
+[![Server Repo](https://img.shields.io/badge/GitHub-Server%20Repository-green?style=for-the-badge&logo=github)](https://github.com/mdmizanurrahman5215/medi-queue-tutor-booking-server.git)
 
 MediQueue is a modern, full-stack web application designed to simplify online tutor discovery and session management. Students can seamlessly browse verified tutors, search by subject or date range, and book real-time learning sessions. Tutors can manage their availability, schedules, and active listings through an intuitive dashboard.
 
@@ -32,7 +32,7 @@ MediQueue is a modern, full-stack web application designed to simplify online tu
 - **Runtime Environment:** Node.js
 - **Framework:** Express.js
 - **Database:** MongoDB Native Driver
-- **Authentication:** JSON Web Tokens (`jsonwebtoken`), Firebase Admin / OAuth integrations
+- **Authentication:** Better Auth , JSON Web Tokens (`jsonwebtoken`), Firebase Admin / OAuth integrations
 - **Environment Management:** `dotenv`, `cors`
 
 ---
@@ -45,7 +45,7 @@ Follow these steps to set up and run MediQueue locally on your machine.
 
 ```bash
 # Clone the client-side repository
-git clone [https://github.com/your-username/mediqueue-client.git](https://github.com/your-username/mediqueue-client.git)
+git clone [https://github.com/your-username/mediqueue-client.git](https://github.com/mdmizanurrahman5215/mediQueue-tutor-booking.git)
 
 # Clone the server-side repository
-git clone [https://github.com/your-username/mediqueue-server.git](https://github.com/your-username/mediqueue-server.git)
+git clone [https://github.com/your-username/mediqueue-server.git](https://github.com/mdmizanurrahman5215/medi-queue-tutor-booking-server.git)
